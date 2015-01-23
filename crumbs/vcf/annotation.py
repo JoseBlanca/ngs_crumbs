@@ -11,6 +11,7 @@ from Bio.Restriction.Restriction import CommOnly, RestrictionBatch, Analysis
 from crumbs.vcf.prot_change import (get_amino_change, IsIndelError,
                                     BetweenSegments, OutsideAlignment)
 from crumbs.vcf.snv import VCFReader
+from crumbs.iterutils import RandomAccessIterator
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
 # Missing docstring
@@ -40,6 +41,9 @@ class BaseAnnotator(object):
     description for the filters and the info property is used to write the
     header for the info field.
     '''
+
+    return_modified_snv = False
+
     def __call__(self, record):
         raise NotImplementedError()
 
@@ -59,7 +63,11 @@ class BaseAnnotator(object):
 
     @property
     def is_filter(self):
-        return True
+        raise NotImplementedError()
+
+    @property
+    def item_wise(self):
+        raise NotImplementedError()
 
     @property
     def info(self):
@@ -126,6 +134,9 @@ class CloseToSnv(BaseAnnotator):
         if passed_snvs:
             snv.add_filter(self.name)
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def name(self):
         snv_type = '' if self.snv_type is None else self.snv_type[0]
@@ -141,7 +152,16 @@ class CloseToSnv(BaseAnnotator):
         desc = 'The snv is closer than {} nucleotides to another {}{} :: {}'
         return desc.format(self.distance, snv_type, maf_str, self.encode_conf)
 
+    @property
+    def is_filter(self):
+        return True
 
+    @property
+    def item_wise(self):
+        return True
+
+
+# TODO: use fai if it is available
 def _get_lengths(fhand):
     lengths = {}
     for seq in SeqIO.parse(fhand, 'fasta'):
@@ -152,40 +172,71 @@ def _get_lengths(fhand):
 class HighVariableRegion(BaseAnnotator):
     'Filter depending on the variability of the region'
 
-    def __init__(self, max_variability, ref_fpath, window=None):
+    def __init__(self, max_variability, window_in_bp, ref_fpath):
         self.max_variability = max_variability
-        self.random_reader = None
-        self.window = window
-        self._lengths = _get_lengths(open(ref_fpath))
-        self.conf = {'max_variability': max_variability, 'window': window}
 
-    def __call__(self, snv):
-        if self.random_reader is None:
-            self.random_reader = self._create_reader_from_snv(snv)
-        self._clean_filter(snv)
-        chrom = snv.chrom
-        pos = snv.pos
-        seq_len = self._lengths[chrom]
-        if not self.window:
-            start = 0
-            end = seq_len - 1
-            window_len = seq_len
-        else:
-            w2 = self.window / 2
-            start = int(pos - w2)
+        self._lengths = _get_lengths(open(ref_fpath))
+
+        if not window_in_bp % 2:
+            raise ValueError('Window in bp must be a odd number')
+        self.window_in_bp = window_in_bp
+
+        max_num_snps = (int(window_in_bp * max_variability) + 1) * 2
+        if not max_num_snps % 2:
+            max_num_snps += 1
+        self._max_num_snps = max_num_snps
+
+        self.conf = {'max_variability': max_variability,
+                     'window_in_bp': window_in_bp}
+
+    def __call__(self, snvs):
+        # TODO: Randon acess iterator based on physical distance
+        # RandomAcessRegionIterator(items, location_getter)
+        # once we do this we can remove max_num_snps
+        snvs = RandomAccessIterator(snvs, self._max_num_snps)
+        half_win = (snvs._rnd_access_win - 1) // 2
+        half_win_in_bp = (self.window_in_bp - 1) // 2
+        for idx, snv in enumerate(snvs):
+            self._clean_filter(snv)
+            chrom = snv.chrom
+            pos = snv.pos
+            start = idx - half_win
             if start < 0:
                 start = 0
-            end = int(pos + w2)
-            if end > seq_len - 1:
-                end = seq_len - 1
-            window_len = self.window
+            end = idx + half_win
+            snvs_in_win = snvs[start:end]
 
-        num_snvs = len(list(self.random_reader.fetch_snvs(chrom, start, end)))
+            def snv_is_close(snv2):
+                if snv2.chrom != chrom:
+                    return False
+                if abs(snv2.pos - pos) < half_win_in_bp:
+                    return True
+                else:
+                    return False
 
-        freq = num_snvs / window_len
+            close_snvs = filter(snv_is_close, snvs_in_win)
 
-        if freq > self.max_variability:
-            snv.add_filter(self.name)
+            num_snvs = len(close_snvs)
+
+            win_len = self.window_in_bp
+            # The studied window could be smaller than expected if it is
+            # located at the beginning of the chromosome
+            dist_from_0 = pos
+            if dist_from_0 < half_win_in_bp:
+                win_len -= (half_win_in_bp - dist_from_0)
+
+            # The studied window could be smaller than expected if it is
+            # located at the end of the chromosome
+            ref_len = self._lengths[chrom]
+            end = ref_len - 1
+            len_not_studied_at_end = pos + half_win_in_bp - end
+            if len_not_studied_at_end > 0:
+                win_len -= len_not_studied_at_end
+
+            freq = num_snvs / win_len
+            if freq >= self.max_variability:
+                snv.add_filter(self.name)
+            yield snv
 
     @property
     def name(self):
@@ -193,8 +244,17 @@ class HighVariableRegion(BaseAnnotator):
 
     @property
     def description(self):
-        desc = 'The region has more than {} snvs per 100 bases:: {}'
-        return desc.format(self.max_variability * 100, self.encode_conf)
+        desc = 'The region has more than {} snvs per {} bases:: {}'
+        return desc.format(int(self.max_variability * 100),
+                           self.window_in_bp, self.encode_conf)
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def item_wise(self):
+        return False
 
 
 class CloseToLimit(BaseAnnotator):
@@ -212,6 +272,8 @@ class CloseToLimit(BaseAnnotator):
         seq_len = self._lengths[chrom]
         if pos < self.distance or seq_len - pos < self.distance:
             snv.add_filter(self.name)
+        if self.return_modified_snv:
+            return snv
 
     @property
     def name(self):
@@ -222,6 +284,14 @@ class CloseToLimit(BaseAnnotator):
         desc = 'The snv is closer than {} nucleotides to the reference edge'
         desc += ':: {}'
         return desc.format(self.distance, self.encode_conf)
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def item_wise(self):
+        return True
 
 
 class MafDepthLimit(BaseAnnotator):
@@ -237,6 +307,8 @@ class MafDepthLimit(BaseAnnotator):
         maf = snv.maf_depth
         if max and maf > self.max_maf:
             snv.add_filter(self.name)
+        if self.return_modified_snv:
+            return snv
 
     @property
     def name(self):
@@ -248,6 +320,14 @@ class MafDepthLimit(BaseAnnotator):
         desc = 'The most frequent allele in samples: {}.'
         desc += 'frequency greater than {} :: {}'
         return desc.format(samples, self.max_maf, self.encode_conf)
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def item_wise(self):
+        return True
 
 
 class CapEnzyme(BaseAnnotator):
@@ -292,6 +372,9 @@ class CapEnzyme(BaseAnnotator):
             enzymes = [str(e) for e in list(enzymes)]
             snv.add_info(info=self.info['id'], value=','.join(enzymes))
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def name(self):
         return 'ce{}'.format('t' if self.all_enzymes else 'f')
@@ -306,6 +389,14 @@ class CapEnzyme(BaseAnnotator):
     def info(self):
         return {'id': 'CAP', 'num': 1, 'type': 'String',
                 'desc': 'Enzymes that can be use to differentiate the alleles'}
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def item_wise(self):
+        return True
 
 
 def _cap_enzymes_between_alleles(allele1, allele2, reference, start, end,
@@ -353,6 +444,9 @@ class Kind(BaseAnnotator):
         if rec_type != self.kind:
             snv.add_filter(self.name)
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def name(self):
         return 'vk{}'.format(self.kind[0].lower())
@@ -360,6 +454,14 @@ class Kind(BaseAnnotator):
     @property
     def description(self):
         return 'It is not an {} :: {}'.format(self.kind, self.encode_conf)
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def item_wise(self):
+        return True
 
 
 class IsVariableAnnotator(BaseAnnotator):
@@ -406,6 +508,9 @@ class IsVariableAnnotator(BaseAnnotator):
 
         snv.add_info(info=self.info_id, value=str(is_variable))
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def info(self):
         if self.samples is None:
@@ -423,6 +528,10 @@ class IsVariableAnnotator(BaseAnnotator):
     @property
     def is_filter(self):
         return False
+
+    @property
+    def item_wise(self):
+        return True
 
 
 class IsVariableDepthAnnotator(BaseAnnotator):
@@ -460,6 +569,9 @@ class IsVariableDepthAnnotator(BaseAnnotator):
 
         snv.add_info(info=self.info_id, value=str(is_variable))
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def info(self):
         samples = ','.join(self.samples)
@@ -474,6 +586,10 @@ class IsVariableDepthAnnotator(BaseAnnotator):
     @property
     def is_filter(self):
         return False
+
+    @property
+    def item_wise(self):
+        return True
 
 
 def variable_in_samples_depth(snv, samples, in_union=True, maf_depth=None,
@@ -491,8 +607,8 @@ def variable_in_samples_depth(snv, samples, in_union=True, maf_depth=None,
     variable_in_samples = []
     for sample_counts in allele_counts.values():
         variable_in_sample = _is_variable_in_sample_depth(sample_counts,
-                                                maf=maf_depth,
-                                                min_reads=min_reads,
+                                                          maf=maf_depth,
+                                                          min_reads=min_reads,
                                                 reference_free=reference_free,
                                      min_reads_per_allele=min_reads_per_allele)
 
@@ -525,7 +641,7 @@ def _is_variable_in_sample_depth(allele_counts, reference_free, maf,
     ref_allele = 0
 
     if (ref_allele in allele_counts and
-        allele_counts[ref_allele] >= min_reads_per_allele):
+            allele_counts[ref_allele] >= min_reads_per_allele):
         ref_in_alleles = True
     else:
         ref_in_alleles = False
@@ -541,7 +657,7 @@ def _is_variable_in_sample_depth(allele_counts, reference_free, maf,
         maf_allele = max(counts) / float(sum(counts))
     else:
         maf_allele = None
-    #maf_allele = _calculate_maf_for_counts(allele_counts)
+    # maf_allele = _calculate_maf_for_counts(allele_counts)
     if maf and maf < maf_allele:
         return False
 
@@ -564,9 +680,9 @@ class HeterozigoteInSamples(BaseAnnotator):
                      'gq_threslhold': gq_threshold,
                      'min_num_called': min_num_called}
 
-    def __call__(self, record):
+    def __call__(self, snv):
         call_is_het = []
-        for call in record.calls:
+        for call in snv.calls:
             sample_name = call.sample
             if self._samples and sample_name not in self._samples:
                 continue
@@ -583,7 +699,10 @@ class HeterozigoteInSamples(BaseAnnotator):
             else:
                 result = False
 
-        record.add_info(info=self.info_id, value=str(result))
+        snv.add_info(info=self.info_id, value=str(result))
+
+        if self.return_modified_snv:
+            return snv
 
     @property
     def info(self):
@@ -604,6 +723,10 @@ class HeterozigoteInSamples(BaseAnnotator):
     @property
     def is_filter(self):
         return False
+
+    @property
+    def item_wise(self):
+        return True
 
 
 class AminoChangeAnnotator(BaseAnnotator):
@@ -643,6 +766,9 @@ class AminoChangeAnnotator(BaseAnnotator):
                                        ','.join(aminos['alt_amino']))
             snv.add_info(info=self.info_id, value=info_val)
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def name(self):
         return 'caa'
@@ -655,6 +781,14 @@ class AminoChangeAnnotator(BaseAnnotator):
     def info(self):
         return {'id': 'AAC', 'num': 1, 'type': 'String',
                 'desc': 'Amino acid change'}
+
+    @property
+    def is_filter(self):
+        return False
+
+    @property
+    def item_wise(self):
+        return True
 
 
 def _parse_blossum_matrix(path):
@@ -713,6 +847,9 @@ class AminoSeverityChangeAnnotator(BaseAnnotator):
         if any([self._is_severe(ref_aa, alt_aa) for alt_aa in alt_aas]):
             snv.add_filter(self.name)
 
+        if self.return_modified_snv:
+            return snv
+
     @property
     def name(self):
         return 'cas'
@@ -720,3 +857,17 @@ class AminoSeverityChangeAnnotator(BaseAnnotator):
     @property
     def description(self):
         return "Alt alleles change the amino acid and the change is severe"
+
+    @property
+    def is_filter(self):
+        return False
+
+    @property
+    def item_wise(self):
+        return True
+
+
+def mark_snv_as_filter_passed(snv):
+    if snv.filters is None:
+        snv.filters = []
+    return snv

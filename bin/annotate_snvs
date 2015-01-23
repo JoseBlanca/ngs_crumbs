@@ -2,12 +2,13 @@
 import sys
 import argparse
 import json
-import os.path
+from itertools import imap
 
 from configobj import ConfigObj
 
 from vcf.parser import _Filter, _Info
 from crumbs.vcf.snv import VCFReader, VCFWriter
+from crumbs.vcf.annotation import mark_snv_as_filter_passed
 
 
 def _setup_argparse():
@@ -53,6 +54,7 @@ def _parse_filters_conf(fpath, snv_in_fpath):
 
 
 def _manage_mappers(reader, filters_in_conf):
+
     mappers_to_use = []
     for mapper in filters_in_conf:
         # we add the snp caller to the mapper
@@ -88,7 +90,16 @@ def _manage_mappers(reader, filters_in_conf):
         if mapper.info:
             info = mapper.info
             reader.infos[info['id']] = _Info(**info)
-    return mappers_to_use
+
+    item_wise_filters = []
+    bulk_filters = []
+    for mapper in mappers_to_use:
+        if mapper.item_wise:
+            item_wise_filters.append(mapper)
+        else:
+            bulk_filters.append(mapper)
+
+    return item_wise_filters, bulk_filters
 
 
 def main():
@@ -98,15 +109,21 @@ def main():
     reader = VCFReader(args['in_fhand'])
     filters_in_conf = _parse_filters_conf(args['filter_fhand'],
                                           args['in_fhand'].name)
-    mappers = _manage_mappers(reader, filters_in_conf)
+    item_wise_filters, bulk_filters = _manage_mappers(reader, filters_in_conf)
     writer = VCFWriter(args['out_fhand'], reader)
 
-    for snv in reader.parse_snvs():
-        for mapper in mappers:
-            mapper(snv)
-        if snv.filters is None:
-            snv.filters = []
-        writer.write_snv(snv)
+    snvs = reader.parse_snvs()
+    for snv_filter in item_wise_filters:
+        # we need the filters to return the modified snvs
+        snv_filter.return_modified_snv = True
+        snvs = imap(snv_filter, snvs)
+
+    for bulk_filter in bulk_filters:
+        snvs = bulk_filter(snvs)
+
+    snvs = imap(mark_snv_as_filter_passed, snvs)
+
+    writer.write_snvs(snvs)
     writer.close()
 if __name__ == '__main__':
     main()
