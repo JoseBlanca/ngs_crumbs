@@ -83,10 +83,14 @@ def _calculate_r_sqr(haplo_counts):
 
 def _most_freq_alleles(calls):
     gts_counts = Counter()
-    if hasattr(calls, 'chrom'):
-        alleles = [al for call in calls for al in call.call.gt_alleles]
+    calls = list(calls)
+    if calls:
+        if hasattr(calls[0], 'depth'):
+            alleles = [al for call in calls for al in call.call.gt_alleles]
+        else:
+            alleles = [al for call in calls for al in call.gt_alleles]
     else:
-        alleles = [al for call in calls for al in call.gt_alleles]
+        alleles = []
     gts_counts.update(alleles)
     return [al for al, count in gts_counts.most_common(2)]
 
@@ -115,7 +119,7 @@ def _count_biallelic_haplotypes(calls1, calls2, return_alleles=False):
     pyvcf = None
     for call1, call2 in zip(calls1, calls2):
         if pyvcf is None:
-            pyvcf = False if hasattr(call1, 'chrom') else True
+            pyvcf = False if hasattr(call1, 'depth') else True
         if pyvcf:
             al_snp_1 = call1.gt_alleles[0]
         else:

@@ -3,6 +3,8 @@ from __future__ import division
 from collections import namedtuple, Counter, OrderedDict
 from itertools import imap
 from array import array
+from warnings import warn
+from exceptions import RuntimeWarning
 
 from matplotlib.figure import Figure
 
@@ -23,18 +25,43 @@ AlleleCoding = namedtuple('AlleleCoding', ['A', 'B'])
 
 
 class GetCoding(object):
+    suspicious_no_parent_alleles = 200
+
     def __init__(self, parents_a, parents_b):
         self.parents_a = parents_a
         self.parents_b = parents_b
+        self._no_alleles = Counter()
 
-    @staticmethod
-    def _get_unique_allele(genotypes, samples):
-        gts = [genotypes.get(sample, None) for sample in samples]
+    def _get_unique_allele(self, genotypes, samples):
+        gts = []
+        samples_with_geno = []
+        for sample in samples:
+            gt = genotypes.get(sample, None)
+            if gt is not None:
+                samples_with_geno.append(sample)
+                gts.append(gt)
         alleles = set(allele for gt in gts if gt for allele in gt if allele != '.')
-        if not alleles or len(alleles) > 1:
-            return None
+
+        for sample in samples_with_geno:
+            self._no_alleles[sample] = 0
+
+        if not alleles:
+            for sample in samples:
+                self._no_alleles[sample] += 1
+            result = None
+        elif len(alleles) > 1:
+            result = None
         elif len(alleles) == 1:
-            return list(alleles)[0]
+            result = list(alleles)[0]
+
+        for sample, count in self._no_alleles.items():
+            if count > self.suspicious_no_parent_alleles:
+                msg = 'Sample with more than %d contiguous snps with no '
+                msg += 'genotypes: %s'
+                msg %= (self.suspicious_no_parent_alleles, sample)
+                self._no_alleles[sample] = 0
+                warn(msg, RuntimeWarning)
+        return result
 
     def __call__(self, snp):
         gts = {call.sample: call.gt_alleles for call in snp.samples if call.called}
@@ -57,13 +84,21 @@ class ABCoder(object):
                  threshold=DEF_AB_CODER_THRESHOLD,
                  offspring=None, window=DEF_AB_CODING_WIN):
         self._reader = pyvcfReader(vcf_fhand)
-        self.parents_a = parents_a
-        self.parents_b = parents_b
         self._offspring = offspring
         self.window = window
         self.threshold = threshold
         self.log = Counter()
         self.indexes = array('f')
+
+        samples = self._reader.samples
+        parents = set(parents_a + parents_b)
+        missing_parents = parents.difference(samples)
+        if missing_parents:
+            msg = 'Some parents are not found in the vcf file: '
+            msg += ','.join(missing_parents)
+            raise ValueError(msg)
+        self.parents_a = parents_a
+        self.parents_b = parents_b
 
     @property
     def offspring(self):

@@ -387,6 +387,7 @@ class WeirdSegregationFilter(object):
                 # Not enough snps to check
                 continue
 
+            orig_snp = snv_1
             if self.samples is not None:
                 snv_1 = snv_1.filter_calls_by_sample(self.samples)
 
@@ -443,7 +444,7 @@ class WeirdSegregationFilter(object):
                 self._plot_segregation_debug(debug_plot_info, plot_fhand)
             if passed:
                 self.passed_snps += 1
-                yield snv_1
+                yield orig_snp
 
     @staticmethod
     def _plot_segregation_debug(plot_info, fhand):
