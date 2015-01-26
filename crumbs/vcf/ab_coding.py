@@ -4,7 +4,6 @@ from collections import namedtuple, Counter, OrderedDict
 from itertools import imap
 from array import array
 from warnings import warn
-from exceptions import RuntimeWarning
 
 from matplotlib.figure import Figure
 
@@ -183,14 +182,17 @@ class ABCoder(object):
         snp_and_coding = RandomAccessIterator(imap(mapper, self._reader),
                                               rnd_access_win=win)
         offspring = self.offspring
+        half_win = (win - 1) // 2
         for idx, (snp1, coding1) in enumerate(snp_and_coding):
             snp1_calls = [snp1.genotype(sample) for sample in offspring]
-            start = idx - win
+
+            start = idx - half_win
             if start < 0:
                 start = 0
+            end = idx + half_win + 1
 
             snp2_idxs = []
-            for snp2_idx in range(start, start + win + 1):
+            for snp2_idx in range(start, end):
                 try:
                     snp2_chrom = snp_and_coding[snp2_idx][0].CHROM
                 except IndexError:
