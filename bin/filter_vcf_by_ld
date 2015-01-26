@@ -63,10 +63,9 @@ def main():
     kwargs, filter_kwargs = _parse_args(parser)
     in_fhand = kwargs['in_fhand']
     out_fhand = kwargs['out_fhand']
-    template_fhand = kwargs['template_fhand']
 
     reader = VCFReader(in_fhand)
-    template = reader if template_fhand is None else VCFReader(template_fhand)
+    template = reader.create_template_reader()
     writer = VCFWriter(out_fhand, template_reader=template)
 
     snvs = reader.parse_snvs()

@@ -7,11 +7,10 @@ from crumbs.vcf.snv import VCFReader
 from crumbs.vcf.ld import (_count_biallelic_haplotypes, calculate_r_sqr,
                            HaploCount, _calculate_r_sqr, _fisher_exact,
                            calculate_ld_stats, filter_snvs_by_ld, fisher_exact,
-                           _LDStatsCache, _calc_recomb_rate,
-                           calc_recomb_rates_along_chroms)
+                           _LDStatsCache)
 from crumbs.utils.bin_utils import BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from subprocess import check_call
+from subprocess import check_call, Popen, PIPE
 
 # Method could be a function
 # pylint: disable=R0201
@@ -321,13 +320,13 @@ class FilterTest(unittest.TestCase):
         fhand = NamedTemporaryFile()
         fhand.write(VCF_HEADER + vcf)
         fhand.flush()
-        stderr = NamedTemporaryFile()
         out_fhand = NamedTemporaryFile()
 
         binary = join(BIN_DIR, 'filter_vcf_by_ld')
         cmd = [binary, '-o', out_fhand.name, fhand.name,
                '--no_bonferroni_correction', '--p_val', '0.03']
-        check_call(cmd, stderr=stderr)
+        process = Popen(cmd, stderr=PIPE)
+        process.communicate()
         assert len(list(VCFReader(open(out_fhand.name)).parse_snvs())) == 3
 
         log_fhand = NamedTemporaryFile()
@@ -335,64 +334,10 @@ class FilterTest(unittest.TestCase):
         cmd = [binary, '-o', out_fhand.name, fhand.name,
                '--no_bonferroni_correction', '--p_val', '0.03',
                '-l', log_fhand.name]
-        check_call(cmd, stderr=stderr)
+        process = Popen(cmd, stderr=PIPE)
+        process.communicate()
         assert 'filtered' in open(log_fhand.name).read()
 
-
-class RecombRateTest(unittest.TestCase):
-    def test_recomb_rate(self):
-        # samples
-        vcf = '''#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT 1 2 3 4 5 6 7 8
-20\t2\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t0/0\t0/0\t0/0\t1/1\t1/1\t1/1\t1/1\t
-20\t3\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t0/0\t0/0\t0/0\t1/1\t1/1\t1/1\t1/1\t
-20\t4\t.\tG\tA\t29\tPASS\tNS=3\tGT\t1/1\t0/0\t1/1\t0/0\t0/0\t1/1\t0/0\t1/1\t
-20\t6\t.\tG\tA\t29\tPASS\tNS=3\tGT\t./.\t./.\t./.\t./.\t./.\t0/1\t0/1\t0/1\t
-21\t4\t.\tG\tA\t29\tPASS\tNS=3\tGT\t1/1\t0/0\t1/1\t0/0\t0/0\t1/1\t0/0\t1/1\t
-'''
-        vcf = StringIO(VCF_HEADER + vcf)
-        snps = list(VCFReader(vcf).parse_snvs())
-
-        recomb = _calc_recomb_rate(snps[0].record.samples,
-                                   snps[1].record.samples,
-                                   'ril_self')
-        self.assertAlmostEqual(recomb, 0.0, 3)
-        recomb = _calc_recomb_rate(snps[0].record.samples,
-                                   snps[2].record.samples,
-                                   'ril_self')
-        self.assertAlmostEqual(recomb, 0.375, 3)
-        recomb = _calc_recomb_rate(snps[0].record.samples,
-                                   snps[2].record.samples,
-                                   'test_cross')
-        self.assertAlmostEqual(recomb, 0.5, 3)
-        recomb = _calc_recomb_rate(snps[0].record.samples,
-                                   snps[3].record.samples,
-                                   'test_cross')
-        assert recomb is None
-
-        vcf = '''#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t1_14_1_gbs\t1_17_1_gbs\t1_18_4_gbs\t1_19_4_gbs\t1_26_1_gbs\t1_27_1_gbs1_2_2_gbs\t1_35_13_gbs\t1_3_2_gbs\t1_50_1_gbs\t1_59_1_gbs\t1_63_4_gbs\t1_6_2_gbs\t1_70_1_gbs\t1_74_1_gbs\t1_79_1_gbs\t1_7_2_gbs\t1_81_10_gbs\t1_86_1_gbs\t1_8_2_gbs\t1_91_2_gbs\t1_94_4_gbs\t2_107_1_gbs\t2_10_2_gbs\t2_116_1_gbs\t2_11_1_gbs\t2_125_2_gbs\t2_13_1_gbs\t2_16_3_gbs\t2_21_1_gbs\t2_22A_1_gbs\t2_24_2_gbs\t2_28_2_gbs\t2_31_2_gbs\t2_33_1_gbs\t2_39_3_gbs\t2_43_1_gbs2_5_1_gbs\t2_64_7_gbs\t2_67_2_gbs\t2_6_4_gbs\t2_84_2_gbs\t2_8_3_gbs\t2_95_2_gbs\t4_100B_4_gbs\t4_108_10_gbs\t4_110_11_gbs\t4_111_6_gbs\t4_115B_2_gbs\t4_11B_3_gbs\t4_123B_2_gbs\t4_127_6_gbs\t4_131_1_gbs\t4_136B_3_gbs\t4_136_10_T1_gbs\t4_138B_2_gbs\t4_26_11_gbs\t4_28_4_gbs\t4_33_2_gbs\t4_35_1_gbs\t4_38_2_gbs\t4_39_2_gbs\t4_41B_2_gbs\t4_42_11_gbs\t4_45_2_gbs\t4_53_2_gbs\t4_5_5_gbs\t4_62_4_gbs\t4_64B_1_gbs\t4_65_5_gbs\t4_66_2_gbs\t4_71_2_gbs\t4_72_1_gbs\t4_77_1_gbs\t4_7B_1_gbs\t4_7_2_gbs\t4_81B_2_gbs\t4_82B_4_gbs\t4_85_1_gbs\t4_95_1_gbs\t4_9_1_gbs\t5_14B_1_gbs\t5_15B_1_gbs\t5_18_1_gbs\t5_22_2_gbs\t5_24_2_gbs\t5_25_2_gbs\t5_32_3_gbs\t5_33B_4_gbs\t5_34B_2_gbs\t5_3_1_gbs\t5_40B_2_gbs\t5_49B_2_T1_gbs\t5_57_1_gbs\t5_58_1_gbs\t5_66_1_gbs\t5_80B_2_gbs\tMU_16_5_gbs\tV_196_2_gbs\t1\t2
-s7\t4039693\tS7_4039693\tT\tG\t.\tPASS\tIV0=F\tGT\t0/0\t0/0\t0/0\t1/1\t0/0\t1/1\t1/1\t1/1\t1/1\t0/0\t0/0\t0/0\t1/1\t0/0\t0/0\t1/1\t0/0\t1/1\t0/0\t0/0\t0/0\t1/1\t0/0\t0/0\t0/0\t0/0\t1/1\t1/1\t0/0\t0/0\t0/0\t0/0\t1/1\t0/0\t1/1\t0/0\t0/0\t1/1\t1/1\t0/0\t1/1\t1/1\t1/1\t0/0\t1/1\t1/1\t1/1\t0/0\t1/1\t1/1\t0/0\t0/0\t0/0\t0/0\t0/0\t1/1\t0/0\t0/0\t./.\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t1/1\t0/0\t0/0\t1/1\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t1/1\t0/0\t1/1\t0/0\t0/0\t0/0\t1/1\t1/1\t1/1\t1/1\t1/1\t0/0\t1/1\t0/0\t0/0\t0/0\t0/0\t1/1
-s7\t4028261\tS7_4028261\tC\tT\t.\tPASS\tIV0=F\tGT\t1/1\t1/1\t./.\t0/0\t1/1\t0/0\t./.\t0/0\t0/0\t1/1\t1/1\t1/1\t0/0\t1/1\t1/1\t0/0\t1/1\t0/0\t1/1\t1/1\t1/1\t0/0\t1/1\t1/1\t1/1\t1/1\t0/0\t0/0\t1/1\t1/1\t1/1\t1/1\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0\t0/0\t1/1\t0/0\t0/0\t0/0\t1/1\t0/0\t0/0\t0/0\t0/0\t0/0\t./.\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/1\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t0/0\t1/1\t0/0
-'''
-        vcf = StringIO(VCF_HEADER + vcf)
-        reader = VCFReader(vcf)
-        snps = list(reader.parse_snvs())
-
-        recomb = _calc_recomb_rate(snps[0].record.samples,
-                                   snps[1].record.samples,
-                                   'ril_self')
-        self.assertAlmostEqual(recomb, 0.8187, 3)
-
-    def test_recomb_rate_along_chrom(self):
-        vcf = FREEBAYES_VCF_PATH
-
-        res = calc_recomb_rates_along_chroms(vcf, pop_type='test_cross')
-        assert not list(res)
-
-        samples = ['sample05_gbs', 'sample06_gbs', 'sample07_gbs',
-                   'sample08_gbs', 'sample09_gbs']
-        res = calc_recomb_rates_along_chroms(vcf, pop_type='test_cross',
-                                             samples=samples)
-        assert not list(res)
 
 class _LDStatsCacheTest(unittest.TestCase):
     def test_ld_stats(self):

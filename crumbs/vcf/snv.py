@@ -226,7 +226,7 @@ class VCFReader(object):
     def header(self):
         return self._build_header()
 
-    def create_template_reader(self, samples):
+    def create_template_reader(self, samples=None):
         vcf = self._build_header(samples)
         fake_vcf = BytesIO(vcf)
         return VCFReader(fake_vcf)
