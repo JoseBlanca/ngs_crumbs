@@ -390,6 +390,27 @@ class BinaryFilterTest(unittest.TestCase):
         assert not stdout
         assert 'tell member' in stderr
 
+    def test_by_sample_bin(self):
+        binary = join(BIN_DIR, 'filter_vcf_by_sample')
+
+        assert 'positional' in check_output([binary, '-h'])
+
+        in_fhand = NamedTemporaryFile()
+        in_fhand.write(VCF_HEADER + VCF)
+        in_fhand.flush()
+        cmd = [binary, '-s', 'NA00005', in_fhand.name]
+        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
+        stderr = process.communicate()[-1]
+        assert 'NA00005' in stderr
+
+        in_fhand = NamedTemporaryFile()
+        in_fhand.write(VCF_HEADER + VCF)
+        in_fhand.flush()
+        cmd = [binary, '-s', 'NA00002', in_fhand.name]
+        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
+        stdout = process.communicate()[0]
+        assert 'FORMAT\tNA00002\n' in stdout
+
 
 def _create_vcf_file(vcf_string):
     vcf_fhand = NamedTemporaryFile(suffix='.vcf', delete=False)
@@ -525,5 +546,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # import sys; sys.argv = ['', 'ConsistentSegregationTest.test_bin']
+    #import sys; sys.argv = ['', 'BinaryFilterTest.test_by_sample_bin']
     unittest.main()

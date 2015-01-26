@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import sys
+import argparse
+from StringIO import StringIO
+
+from crumbs.vcf.snv import VCFReader, VCFWriter
+from crumbs.utils.file_utils import get_input_fhand
+from crumbs.vcf.utils.bin_utils import parse_sample_file
+
+
+def _setup_argparse(**kwargs):
+    'It prepares the command line argument parsing.'
+    parser = argparse.ArgumentParser(**kwargs)
+
+    parser.add_argument('input', type=argparse.FileType('rb'),
+                        help='Input VCF file (default STDIN)',
+                        default=sys.stdin, nargs='?')
+    parser.add_argument('-o', '--output', default=sys.stdout,
+                        help='Output VCF file (default STDOUT)',
+                        type=argparse.FileType('w'))
+    parser.add_argument('-s', '--samples', action='append',
+                        help='samples to keep')
+    parser.add_argument('-f', '--samples_file',
+                        help='File with samples to keep. One per line',
+                        type=argparse.FileType('r'))
+
+    return parser
+
+
+def _parse_args(parser):
+    parsed_args = parser.parse_args()
+
+    in_fhand = get_input_fhand(parsed_args.input)
+
+    args = {'in_fhand': in_fhand}
+
+    args['out_fhand'] = parsed_args.output
+
+    samples = set()
+    if parsed_args.samples is not None:
+        samples.update(parsed_args.samples)
+    if parsed_args.samples_file is not None:
+        samples.update(parse_sample_file(parsed_args.samples_file))
+
+    args['samples_to_keep'] = samples if samples else None
+
+    return args
+
+
+def main():
+    description = 'Returns a VCF with the data of the provided samples'
+    parser = _setup_argparse(description=description)
+    args = _parse_args(parser)
+
+    reader = VCFReader(args['in_fhand'])
+
+    samples_to_keep = args['samples_to_keep']
+    all_samples = reader.samples
+
+    diff = set(samples_to_keep).difference(all_samples)
+    if diff:
+        msg = 'Some samples are not found in the vcf file: '
+        msg += ','.join(diff)
+        raise ValueError(msg)
+
+    templa_reader = reader.create_template_reader(samples_to_keep)
+    writer = VCFWriter(args['out_fhand'], template_reader=templa_reader)
+
+    for snv in reader.parse_snvs():
+        flt_snv = snv.filter_calls_by_sample(args['samples_to_keep'])
+        writer.write_snv(flt_snv)
+
+
+if __name__ == '__main__':
+    main()

@@ -386,7 +386,6 @@ def calc_recomb_rates_along_chroms(vcf_fpath, pop_type, samples=None,
         if recombs:
             to_return.append([chrom, pos, recombs])
     from crumbs.plot import build_histogram, draw_density_plot
-    print 'hola'
     from os.path import join as pjoin
 
     dir_ = '/home/jose/tmp/rils/results/'

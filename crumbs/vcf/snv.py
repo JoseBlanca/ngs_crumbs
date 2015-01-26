@@ -4,6 +4,7 @@ import sys
 from collections import Counter, OrderedDict, namedtuple
 import gzip
 from operator import itemgetter
+from io import BytesIO
 
 from vcf import Reader as pyvcfReader
 from vcf import Writer as pyvcfWriter
@@ -128,6 +129,9 @@ class VCFReader(object):
                                         filename=filename)
         self.min_calls_for_pop_stats = min_calls_for_pop_stats
         self._snpcaller = None
+        self._samples = self.pyvcf_reader.samples
+        self._header_lines = self.pyvcf_reader._header_lines
+        self._column_headers = self.pyvcf_reader._column_headers
 
     def parse_snvs(self):
         min_calls_for_pop_stats = self.min_calls_for_pop_stats
@@ -200,7 +204,7 @@ class VCFReader(object):
 
     @property
     def samples(self):
-        return self.pyvcf_reader.samples
+        return self._samples
 
     @property
     def filters(self):
@@ -210,12 +214,22 @@ class VCFReader(object):
     def infos(self):
         return self.pyvcf_reader.infos
 
+    def _build_header(self, samples=None):
+        if samples is None:
+            samples = self.samples
+        header = '\n'.join(self._header_lines)
+        header += '\n#' + '\t'.join(self._column_headers)
+        header += '\t' + '\t'.join(samples)
+        return header
+
     @property
     def header(self):
-        header = '\n'.join(self.pyvcf_reader._header_lines)
-        header += '\n#' + '\t'.join(self.pyvcf_reader._column_headers)
-        header += '\t' + '\t'.join(self.pyvcf_reader.samples)
-        return header
+        return self._build_header()
+
+    def create_template_reader(self, samples):
+        vcf = self._build_header(samples)
+        fake_vcf = BytesIO(vcf)
+        return VCFReader(fake_vcf)
 
 
 class VCFWriter(pyvcfWriter):
