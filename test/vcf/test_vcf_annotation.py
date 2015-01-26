@@ -100,46 +100,36 @@ class AnnotatorsTest(unittest.TestCase):
         assert filter_.name in rec1.filters
 
     def test_high_variable_region_filter(self):
-        records = list(VCFReader(open(VCF_PATH),
-                                 min_calls_for_pop_stats=1).parse_snvs())
-        rec1 = records[0].copy()
-        filter_ = HighVariableRegion(max_variability=0.002,
-                                     window=None, ref_fpath=REF_PATH)
-        filter_(rec1)
-        assert filter_.name in rec1.filters
+        records = VCFReader(open(VCF_PATH),
+                            min_calls_for_pop_stats=1).parse_snvs()
+        bulk_filter = HighVariableRegion(max_variability=0.02,
+                                         window_in_bp=101, ref_fpath=REF_PATH)
+        records = list(bulk_filter(records))
+        assert bulk_filter.name in records[0].filters
+        assert bulk_filter.name not in records[3].filters
+        records = VCFReader(open(VCF_PATH),
+                            min_calls_for_pop_stats=1).parse_snvs()
+        bulk_filter = HighVariableRegion(max_variability=0.05,
+                                         window_in_bp=101, ref_fpath=REF_PATH)
+        records = list(bulk_filter(records))
+        assert bulk_filter.name not in records[0].filters
 
-        filter_ = HighVariableRegion(max_variability=0.005,
-                                     window=None, ref_fpath=REF_PATH)
-        rec1 = records[0].copy()
-        filter_(rec1)
-        assert filter_.name not in rec1.filters
+        assert bulk_filter.name == 'hv0.05'
+        desc = 'The region has more than 5 snvs per 101 bases'
+        assert desc in bulk_filter.description
 
-        assert filter_.name == 'hv0.005'
-        desc = 'The region has more than 0.5 snvs per 100 bases'
-        assert desc in filter_.description
-        records = list(VCFReader(open(VCF_PATH),
-                                 min_calls_for_pop_stats=1).parse_snvs())
-        filter_ = HighVariableRegion(max_variability=0.003, ref_fpath=REF_PATH)
-        rec1 = records[0].copy()
-        filter_(rec1)
-        assert filter_.name in rec1.filters
-
-        filter_ = HighVariableRegion(max_variability=0.004, ref_fpath=REF_PATH)
-        rec1 = records[0].copy()
-        filter_(rec1)
-        assert filter_.name not in rec1.filters
-
-        filter_ = HighVariableRegion(max_variability=0.003, window=10,
-                                     ref_fpath=REF_PATH)
-        rec1 = records[0].copy()
-        filter_(rec1)
-        assert filter_.name in rec1.filters
-
-        filter_ = HighVariableRegion(max_variability=0.003, window=100,
-                                     ref_fpath=REF_PATH)
-        rec1 = records[0].copy()
-        filter_(rec1)
-        assert filter_.name in rec1.filters
+        records = VCFReader(open(VCF_PATH),
+                            min_calls_for_pop_stats=1).parse_snvs()
+        bulk_filter = HighVariableRegion(max_variability=0.003,
+                                         window_in_bp=11, ref_fpath=REF_PATH)
+        records = list(bulk_filter(records))
+        assert bulk_filter.name in records[0].filters
+        records = VCFReader(open(VCF_PATH),
+                            min_calls_for_pop_stats=1).parse_snvs()
+        bulk_filter = HighVariableRegion(max_variability=0.003,
+                                         window_in_bp=101, ref_fpath=REF_PATH)
+        records = list(bulk_filter(records))
+        assert bulk_filter.name in records[0].filters
 
     def test_close_to_limit_filter(self):
         records = list(VCFReader(open(VCF_PATH),
@@ -624,6 +614,7 @@ class BinaryTest(unittest.TestCase):
 [2]
     [[HighVariableRegion]]
         max_variability = 0.05
+        window_in_bp = 101
         ref_fpath = '{sample_fasta}'
 [3]
     [[CapEnzyme]]
@@ -646,11 +637,12 @@ class BinaryTest(unittest.TestCase):
         cmd = [binary, FREEBAYES3_VCF_PATH, '-f', config_fhand.name]
         #raw_input(' '.join(cmd))
         result = check_output(cmd)
+        print result
         assert 'cs60_0.70\t' in result
         assert 'CAP=MmeI' in result
         assert 'HIS1=True' in result
         assert '\tPASS\t' in result
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'AnnotatorsTest.test_is_variable_annotator']
+    # import sys;sys.argv = ['', 'AnnotatorsTest.test_high_variable_region_filter']
     unittest.main()
