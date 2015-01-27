@@ -109,7 +109,7 @@ class RealignTest(unittest.TestCase):
         # in parallel
         realigned_fhand = NamedTemporaryFile(suffix='.realigned.bam')
         check_call([bin_, bam_fpath, '-o', realigned_fhand.name, '-f',
-                    ref_fpath])#, '-t', '2'])
+                    ref_fpath])  # , '-t', '2'])
         assert open(realigned_fhand.name).read()
 
 
@@ -118,12 +118,17 @@ class CalmdTest(unittest.TestCase):
         ref_fpath = os.path.join(TEST_DATA_DIR, 'CUUC00007_TC01.fasta')
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')
         orig_qual = pysam.Samfile(bam_fpath).next().qual
-        out_bam = NamedTemporaryFile()
-        calmd_bam(bam_fpath, ref_fpath, out_bam.name)
-        samfile = pysam.Samfile(out_bam.name)
-        calmd_qual = alignment = samfile.next().qual
-        assert orig_qual != calmd_qual
-        assert calmd_qual == 'HHHHHHBHGGH!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        try:
+            out_bam = NamedTemporaryFile()
+            calmd_bam(bam_fpath, ref_fpath, out_bam.name)
+
+            samfile = pysam.Samfile(out_bam.name)
+            calmd_qual = samfile.next().qual
+            assert orig_qual != calmd_qual
+            assert calmd_qual == 'HHHHHHBHGGH!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        finally:
+            if os.path.exists(out_bam.name):
+                out_bam.close()
 
     def test_calmd_no_out(self):
         ref_fpath = os.path.join(TEST_DATA_DIR, 'CUUC00007_TC01.fasta')
