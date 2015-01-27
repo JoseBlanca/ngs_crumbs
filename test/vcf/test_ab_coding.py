@@ -18,7 +18,6 @@ from StringIO import StringIO
 from tempfile import NamedTemporaryFile
 
 from crumbs.vcf.ab_coding import ABCoder, ENOUGH_SUPPORT, NOT_ENOUGH_SUPPORT
-from crumbs.vcf.smooth import Smoother
 
 
 # Method could be a function
@@ -64,7 +63,7 @@ class ABCodingTest(unittest.TestCase):
         fhand = StringIO(self.VCF_HEADER + self.vcf)
 
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
-                        threshold=0.9)
+                        parent_index_threshold=0.9)
         assert coder.offspring == ['S3', 'S4', 'S5', 'S6']
         try:
             list(coder.recode_genotypes())
@@ -75,13 +74,17 @@ class ABCodingTest(unittest.TestCase):
         fhand = StringIO(self.VCF_HEADER + self.vcf)
 
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
-                        threshold=0.9)
+                        parent_index_threshold=0.9)
         result = coder.recode_genotypes(samples=coder.offspring)
         string = ''
         for snp, geno in result:
             string += str(snp.POS) + ' '
             string += ','.join(''.join(geno) for geno in geno.values())
             string += '\n'
+        assert string == '''11 AA,AA,BB,BB
+16 AA,AA,BB,BB
+17 AA,AA,BB,BB
+'''
         assert sum(coder.log.values()) == 6
         assert coder.log[NOT_ENOUGH_SUPPORT] == 2
         assert coder.log[ENOUGH_SUPPORT] == 3
@@ -100,49 +103,60 @@ class ABCodingTest(unittest.TestCase):
 
     def test_smooth(self):
         vcf = '''#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1\tS2\tS3\tS4\tS5\tS6
-20\t11\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
-20\t14\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t0/0\t1/1
+20\t11\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t1/1\t1/1\t1/1\t0/0
+20\t14\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
 20\t15\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
-20\t16\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t0/0\t1/1\t1/1
+20\t16\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
 20\t17\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
-20\t18\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t1/1
+20\t18\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t0/0\t0/0
+20\t19\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t1/0
+20\t20\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t1/1
+20\t21\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
+20\t22\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t1/1
+20\t23\t.\tG\tA\t29\tPASS\tNS=3\tGT\t0/0\t1/1\t0/0\t1/1\t1/1\t0/0
 '''
         fhand = StringIO(self.VCF_HEADER + vcf)
 
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
-                        threshold=0.9)
+                        parent_index_threshold=0.9, smooth_threhsold=0.5,
+                        window=7)
         result = coder.recode_genotypes(samples=coder.offspring)
 
-        smoother = Smoother(window=5, smooth_threhsold=0.6)
-        result = smoother.smooth_genotypes(result, samples=coder.offspring)
         expected = '''11 AA,BB,BB,AA
-14 AA,BB,BB,..
-15 AA,BB,BB,..
-16 AA,BB,BB,..
-17 AA,BB,BB,..
-18 AA,BB,BB,BB
+14 AA,BB,BB,AA
+15 AA,BB,BB,AA
+16 AA,BB,BB,AA
+17 AA,BB,BB,AA
+18 AA,BB,BB,AA
+19 AA,BB,BB,..
+20 AA,BB,BB,..
+21 AA,BB,BB,AA
+22 AA,BB,BB,..
+23 AA,BB,BB,AA
 '''
         assert self._ab_result_to_str(result) == expected
 
         fhand = StringIO(self.VCF_HEADER + vcf)
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
-                        threshold=0.9)
+                        parent_index_threshold=0.9, smooth_threhsold=0.6,
+                        recomb_threshold=2)
         result = coder.recode_genotypes(samples=coder.offspring)
-
-        smoother = Smoother(window=5, smooth_threhsold=0.6, recomb_threshold=2)
-        result = smoother.smooth_genotypes(result, samples=coder.offspring)
-        expected = '''11 AA,BB,BB,AA
+        expected = '''11 AA,BB,BB,AB
 14 AA,BB,BB,AB
 15 AA,BB,BB,AB
 16 AA,BB,BB,AB
 17 AA,BB,BB,AB
-18 AA,BB,BB,BB
+18 AA,BB,BB,AB
+19 AA,BB,BB,AB
+20 AA,BB,BB,AB
+21 AA,BB,BB,AB
+22 AA,BB,BB,AB
+23 AA,BB,BB,AB
 '''
         assert self._ab_result_to_str(result) == expected
 
         fhand = NamedTemporaryFile(suffix='.png')
-        smoother.plot_hist(fhand)
-        # TODO pensar. estaria bien que smooth fuese un metodo de abcoder?
+        coder.plot_smooth_hist(fhand)
 
 if __name__ == "__main__":
 #     import sys;sys.argv = ['', 'FilterTest.test_close_to_filter']

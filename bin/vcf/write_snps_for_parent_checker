@@ -41,13 +41,23 @@ def _setup_argparse():
     parser.add_argument('-m', '--phys_map_output', help=hlp,
                         type=argparse.FileType('wb'))
 
-    hlp = 'Support threshold for AB recoding. DEF. '
-    hlp += str(DEF_AB_CODER_THRESHOLD) + '\n'
+    hlp = 'Support threshold for AB recoding. (def. '
+    hlp += str(DEF_AB_CODER_THRESHOLD) + ')'
     parser.add_argument('-t', '--AB_coding_threshold', help=hlp,
                         type=float, default=DEF_AB_CODER_THRESHOLD)
 
+    hlp = 'Smoothing threshold.'
+    parser.add_argument('--smooth_threshold', help=hlp, type=float)
+
+    hlp = 'Recomb. threshold.'
+    parser.add_argument('--recomb_threshold', help=hlp, type=float)
+
     hlp = 'output AB coding threshold histogram'
-    parser.add_argument('-p', '--hist_output', help=hlp,
+    parser.add_argument('-p', '--parent_hist', help=hlp,
+                        type=argparse.FileType('w'))
+
+    hlp = 'output Smooth threshold histogram'
+    parser.add_argument('--smooth_hist', help=hlp,
                         type=argparse.FileType('w'))
 
     hlp = 'output AB coding log (default STDERR)'
@@ -67,9 +77,12 @@ def _parse_args(parser):
     args['genos_fhand'] = parsed_args.output
     args['phys_map_fhand'] = parsed_args.phys_map_output
     args['coder_threshold'] = parsed_args.AB_coding_threshold
-    args['threshold_hist'] = parsed_args.hist_output
+    args['parent_hist'] = parsed_args.parent_hist
+    args['smooth_hist'] = parsed_args.smooth_hist
     args['log'] = parsed_args.log
-
+    args['smooth_threshold'] = parsed_args.smooth_threshold
+    args['recomb_threshold'] = parsed_args.recomb_threshold
+    
     return args
 
 
@@ -81,10 +94,15 @@ def main():
     coder = write_parent_checker(vcf_fhand, args['parents_a'],
                                  args['parents_b'], args['genos_fhand'],
                                  phys_map_fhand=args['phys_map_fhand'],
-                                 coder_threshold=args['coder_threshold'])
+                                 coder_threshold=args['coder_threshold'],
+                                 smooth_threshold=args['smooth_threshold'],
+                                 recomb_threshold=args['recomb_threshold'])
 
-    if args['threshold_hist'] is not None:
-        coder.plot_index_hist(args['threshold_hist'])
+    if args['parent_hist'] is not None:
+        coder.plot_parent_coding_hist(args['parent_hist'])
+
+    if args['smooth_hist'] is not None:
+        coder.plot_smooth_hist(args['smooth_hist'])
 
     if args['log'] is not None:
         coder.write_log(args['log'])
