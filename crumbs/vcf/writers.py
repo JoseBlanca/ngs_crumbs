@@ -270,9 +270,13 @@ def _code_to_one_letter(geno):
 
 def write_parent_checker(vcf_fhand, parents_a, parents_b, genos_fhand,
                          phys_map_fhand=None,
-                         coder_threshold=DEF_AB_CODER_THRESHOLD):
+                         coder_threshold=DEF_AB_CODER_THRESHOLD,
+                         smooth_threshold=None, recomb_threshold=None):
     sep = '\t'
-    coder = ABCoder(vcf_fhand, parents_a, parents_b, threshold=coder_threshold)
+    coder = ABCoder(vcf_fhand, parents_a, parents_b,
+                    parent_index_threshold=coder_threshold,
+                    smooth_threhsold=smooth_threshold,
+                    recomb_threshold=recomb_threshold)
     samples = coder.offspring
     snp_ids = []
     snp_genos = []
