@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 from StringIO import StringIO
 from subprocess import check_call, CalledProcessError, check_output
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.vcf.snv import VCFReader
 from crumbs.vcf.genotype_filters import (LowEvidenceAlleleFilter, RIL_SELF,
                                          prob_aa_given_n_a_reads_hw)
@@ -81,7 +81,7 @@ class GenotypeFilterTests(unittest.TestCase):
         in_fhand.write(VCF_HEADER + vcf)
         in_fhand.flush()
         out_fhand = NamedTemporaryFile()
-        binary = os.path.join(BIN_DIR, 'filter_het_genotypes')
+        binary = os.path.join(VCF_BIN_DIR, 'filter_het_genotypes')
         cmd = [binary, in_fhand.name, '-o', out_fhand.name]
         check_call(cmd)
         assert './.:48:8:51,51' in open(out_fhand.name).read()
@@ -99,7 +99,7 @@ class GenotypeFilterTests(unittest.TestCase):
         in_fhand.write(VCF_HEADER + vcf)
         in_fhand.flush()
         out_fhand = NamedTemporaryFile()
-        binary = os.path.join(BIN_DIR, 'filter_low_qual_genotypes')
+        binary = os.path.join(VCF_BIN_DIR, 'filter_low_qual_genotypes')
         cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-m', '20']
         check_call(cmd)
         assert './.:17:2' in open(out_fhand.name).read()
@@ -181,7 +181,7 @@ class LowQualAlleleTest(unittest.TestCase):
         in_fhand.write(VCF_HEADER + vcf)
         in_fhand.flush()
         out_fhand = NamedTemporaryFile()
-        binary = os.path.join(BIN_DIR, 'filter_low_evidence_alleles')
+        binary = os.path.join(VCF_BIN_DIR, 'filter_low_evidence_alleles')
         cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-c', '2']
         stdout = check_output(cmd)
         assert 'Tot. SNVs' in stdout
@@ -197,7 +197,7 @@ class LowQualAlleleTest(unittest.TestCase):
         in_fhand.write(VCF_HEADER + vcf)
         in_fhand.flush()
         out_fhand = NamedTemporaryFile()
-        binary = os.path.join(BIN_DIR, 'filter_low_evidence_alleles')
+        binary = os.path.join(VCF_BIN_DIR, 'filter_low_evidence_alleles')
         cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-n', '7',
                '-g', 'ril_self']
         stdout = check_output(cmd)
@@ -205,7 +205,7 @@ class LowQualAlleleTest(unittest.TestCase):
         exp = '0/0:14:0\t1/1:0:15\t1/.:0:1\t0/.:1:0\t0/0:9:0\t0/1:1:1'
         assert exp in open(out_fhand.name).read()
 
-        binary = os.path.join(BIN_DIR, 'filter_low_evidence_alleles')
+        binary = os.path.join(VCF_BIN_DIR, 'filter_low_evidence_alleles')
         cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-g', 'ril_self']
         err_fhand = NamedTemporaryFile()
         try:

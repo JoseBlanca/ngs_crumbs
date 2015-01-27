@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 import pysam
 
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import BAM_BIN_DIR
 from crumbs.bam.bam_tools import (filter_bam, calmd_bam, realign_bam,
                                   index_bam, merge_sams)
 
@@ -17,7 +17,7 @@ from crumbs.bam.bam_tools import (filter_bam, calmd_bam, realign_bam,
 
 class SortTest(unittest.TestCase):
     def test_sort_bam_bin(self):
-        bin_ = os.path.join(BIN_DIR, 'sort_bam')
+        bin_ = os.path.join(BAM_BIN_DIR, 'sort_bam')
         assert 'usage' in check_output([bin_, '-h'])
 
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
@@ -82,7 +82,7 @@ class RealignTest(unittest.TestCase):
         realign_bam(bam_fpath, ref_fpath, out_bam.name)
 
     def test_realign_bin(self):
-        bin_ = os.path.join(BIN_DIR, 'realign_bam')
+        bin_ = os.path.join(BAM_BIN_DIR, 'realign_bam')
         assert 'usage' in check_output([bin_, '-h'])
 
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')
@@ -126,7 +126,7 @@ class CalmdTest(unittest.TestCase):
                 os.remove(copied_fpath)
 
     def test_calmd_bin(self):
-        bin_ = os.path.join(BIN_DIR, 'calmd_bam')
+        bin_ = os.path.join(BAM_BIN_DIR, 'calmd_bam')
         assert 'usage' in check_output([bin_, '-h'])
 
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')

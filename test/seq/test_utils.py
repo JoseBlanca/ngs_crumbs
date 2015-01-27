@@ -23,7 +23,7 @@ from cStringIO import StringIO
 
 from crumbs.utils.file_utils import (TemporaryDir, rel_symlink,
                                      wrap_in_buffered_reader)
-from crumbs.utils.bin_utils import check_process_finishes, popen, BIN_DIR
+from crumbs.utils.bin_utils import check_process_finishes, popen, SEQ_BIN_DIR
 
 from crumbs.exceptions import ExternalBinaryError, MissingBinaryError
 from crumbs.utils.test_utils import TEST_DATA_DIR
@@ -154,7 +154,7 @@ class ErrorHandlingTest(unittest.TestCase):
     'It tests the handling of the unexpected errors'
     def test_error_handling(self):
         'We handle the errors'
-        cat_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        cat_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
 
         os.environ[ERROR_ENVIRON_VARIABLE] = 'Fail'
         stderr = NamedTemporaryFile(suffix='.error')

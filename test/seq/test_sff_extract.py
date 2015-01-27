@@ -20,7 +20,7 @@ from subprocess import check_output, CalledProcessError
 
 from crumbs.seq.sff_extract import SffExtractor
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 
 # pylint: disable=R0201
 # pylint: disable=R0904
@@ -89,21 +89,21 @@ class SffExtractTest(unittest.TestCase):
         assert extractor.clip_advice[sff_fpath] == (5, 'A')
 
         extractor = SffExtractor([open(sff_fpath, 'rb')], min_left_clip=4,
-                            trim=False)
+                                 trim=False)
         seqs = extractor.seqs
         seqs = list(seqs)
         assert len(seqs) == 10
         assert extractor.clip_advice[sff_fpath] == (5, 'A')
 
         extractor = SffExtractor([open(sff_fpath, 'rb')], min_left_clip=4,
-                            trim=True)
+                                 trim=True)
         seqs = extractor.seqs
         seqs = list(seqs)
         assert len(seqs) == 10
         assert extractor.clip_advice[sff_fpath] == (5, 'A')
 
         extractor = SffExtractor([open(sff_fpath, 'rb')], min_left_clip=5,
-                            trim=True)
+                                 trim=True)
         seqs = extractor.seqs
         seqs = list(seqs)
         assert len(seqs) == 10
@@ -115,7 +115,7 @@ class SffExtractBinTest(unittest.TestCase):
 
     def test_extract_sff(self):
         'It tests the sff_extract binary'
-        sff_bin = os.path.join(BIN_DIR, 'sff_extract')
+        sff_bin = os.path.join(SEQ_BIN_DIR, 'sff_extract')
         assert 'usage' in check_output([sff_bin, '-h'])
         assert 'usage' in check_output([sff_bin])
 

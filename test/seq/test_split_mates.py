@@ -30,7 +30,7 @@ from Bio.Seq import Seq
 from crumbs.seq.split_mates import MatePairSplitter
 from crumbs.settings import get_setting
 from crumbs.seq.seqio import read_seq_packets, write_seq_packets, read_seqs
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.seq.utils.seq_utils import process_seq_packets
 from crumbs.utils.tags import SEQRECORD
@@ -71,7 +71,7 @@ class MateSplitterTest(unittest.TestCase):
 
         # segment at end
         seqs = splitter._split_by_mate_linker(seq, ([(7, 10)], False))
-        assert  get_str_seq(seqs[0]) == 'aaatttc'
+        assert get_str_seq(seqs[0]) == 'aaatttc'
         assert get_name(seqs[0]) == 'seq'
 
         # segment in the middle
@@ -86,7 +86,7 @@ class MateSplitterTest(unittest.TestCase):
         assert get_name(seqs[1]) == r'seq\2'
 
         seqs = splitter._split_by_mate_linker(seq, ([(4, 6), (8, 9)],
-                                                          False))
+                                                    False))
         assert get_str_seq(seqs[0]) == 'aaat'
         assert get_str_seq(seqs[1]) == 'c'
         assert get_str_seq(seqs[2]) == 't'
@@ -126,7 +126,7 @@ class MateSplitterTest(unittest.TestCase):
             seq_index = index // 2
             pair_index = (index % 2) + 1
             expected_id = 'seq_' + str(seq_index) + '\\' + str(pair_index)
-            assert  get_name(seq) == expected_id
+            assert get_name(seq) == expected_id
 
     def test_split_mates(self):
         'It tests the detection of oligos in sequence files'
@@ -273,7 +273,7 @@ class SplitMatesBinTest(unittest.TestCase):
 
     def test_matepair_bin(self):
         'It tests the split mate pairs binary'
-        mate_bin = os.path.join(BIN_DIR, 'split_matepairs')
+        mate_bin = os.path.join(SEQ_BIN_DIR, 'split_matepairs')
         stdout = check_output([mate_bin, '-h'])
         assert 'usage' in stdout
 
@@ -285,8 +285,8 @@ class SplitMatesBinTest(unittest.TestCase):
         check_output(cmd)
         result = open(out_fhand.name).read()
 
-        assert r'G109AZL01D8U3X\1' in  result
-        assert r'G109AZL01D8U3X\2' in  result
+        assert r'G109AZL01D8U3X\1' in result
+        assert r'G109AZL01D8U3X\2' in result
 
         out_fhand = NamedTemporaryFile(suffix='.fasta')
         seq_fpath = os.path.join(TEST_DATA_DIR, '454_reads.fastq')
@@ -295,8 +295,8 @@ class SplitMatesBinTest(unittest.TestCase):
                seq_fpath]
         check_output(cmd)
         result = open(out_fhand.name).read()
-        assert r'@G109AZL01BJHT8\1' in  result
-        assert r'@G109AZL01BJHT8\2' in  result
+        assert r'@G109AZL01BJHT8\1' in result
+        assert r'@G109AZL01BJHT8\2' in result
 
         mate_fhand = create_a_matepair_file()
         out_fhand = NamedTemporaryFile(suffix='.fasta')
@@ -341,7 +341,7 @@ class SplitMatesBinTest(unittest.TestCase):
 
     def test_parallel_bin(self):
         'The mate pairs binary runs in parallel'
-        mate_bin = os.path.join(BIN_DIR, 'split_matepairs')
+        mate_bin = os.path.join(SEQ_BIN_DIR, 'split_matepairs')
         mate_fhand = create_a_matepair_file()
         mate_fhand.seek(0)
 
@@ -355,5 +355,5 @@ class SplitMatesBinTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'MateSplitterTest.test_split_mate']
+    # import sys;sys.argv = ['', 'MateSplitterTest.test_split_mate']
     unittest.main()

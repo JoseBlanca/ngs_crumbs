@@ -17,7 +17,7 @@ from crumbs.vcf.statistics import (VcfStats, HOM_REF, VCFcomparisons,
                                    draw_read_pos_stats,
                                    calc_snv_read_pos_stats)
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 
 VARSCAN_VCF_PATH = join(TEST_DATA_DIR, 'sample.vcf.gz')
@@ -90,7 +90,7 @@ class VCFcomparisonsTest(unittest.TestCase):
         assert stats['common_snps_prc'] == 100
 
     def xtest_compare_vcfs_samples(self):
-        binary = join(BIN_DIR, 'compare_vcfs_samples')
+        binary = join(VCF_BIN_DIR, 'compare_vcfs_samples')
         assert 'usage' in check_output([binary, '-h'])
         samples_fhand = NamedTemporaryFile()
         samples_fhand.write('mu16\n')
@@ -104,7 +104,7 @@ class VCFcomparisonsTest(unittest.TestCase):
         assert stats == result
 
     def test_binary(self):
-        binary = join(BIN_DIR, 'calculat_vcf_stats')
+        binary = join(VCF_BIN_DIR, 'calculat_vcf_stats')
 
 
 class ReadPosCoord(unittest.TestCase):

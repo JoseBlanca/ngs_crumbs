@@ -8,7 +8,7 @@ from crumbs.vcf.ld import (_count_biallelic_haplotypes, calculate_r_sqr,
                            HaploCount, _calculate_r_sqr, _fisher_exact,
                            calculate_ld_stats, filter_snvs_by_ld, fisher_exact,
                            _LDStatsCache)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from subprocess import check_call, Popen, PIPE
 
@@ -322,7 +322,7 @@ class FilterTest(unittest.TestCase):
         fhand.flush()
         out_fhand = NamedTemporaryFile()
 
-        binary = join(BIN_DIR, 'filter_vcf_by_ld')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_ld')
         cmd = [binary, '-o', out_fhand.name, fhand.name,
                '--no_bonferroni_correction', '--p_val', '0.03']
         process = Popen(cmd, stderr=PIPE)
@@ -330,7 +330,7 @@ class FilterTest(unittest.TestCase):
         assert len(list(VCFReader(open(out_fhand.name)).parse_snvs())) == 3
 
         log_fhand = NamedTemporaryFile()
-        binary = join(BIN_DIR, 'filter_vcf_by_ld')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_ld')
         cmd = [binary, '-o', out_fhand.name, fhand.name,
                '--no_bonferroni_correction', '--p_val', '0.03',
                '-l', log_fhand.name]

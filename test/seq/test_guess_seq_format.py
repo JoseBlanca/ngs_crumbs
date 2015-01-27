@@ -19,7 +19,7 @@ from subprocess import check_output, CalledProcessError
 from tempfile import NamedTemporaryFile
 from StringIO import StringIO
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.seq.utils.file_formats import get_format, _guess_format
 from crumbs.exceptions import (UnknownFormatError, FileIsEmptyError,
                                UndecidedFastqVersionError)
@@ -34,7 +34,7 @@ class GuessFormatBinTest(unittest.TestCase):
     def test_guess_format(self):
         'It tests guess_seq_format'
 
-        guess_bin = os.path.join(BIN_DIR, 'guess_seq_format')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'guess_seq_format')
 
         assert 'usage' in check_output([guess_bin, '-h'])
 
@@ -57,7 +57,7 @@ class GuessFormatBinTest(unittest.TestCase):
 
     def test_stdin(self):
         'It works with stdin'
-        guess_bin = os.path.join(BIN_DIR, 'guess_seq_format')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'guess_seq_format')
         fasta_fhand = NamedTemporaryFile()
         fasta_fhand.write('>seq\nACTA\n')
         fasta_fhand.flush()
@@ -66,7 +66,7 @@ class GuessFormatBinTest(unittest.TestCase):
 
     def test_version(self):
         'It can return its version number'
-        guess_bin = os.path.join(BIN_DIR, 'guess_seq_format')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'guess_seq_format')
 
         stderr = NamedTemporaryFile()
         check_output([guess_bin, '--version'], stderr=stderr)

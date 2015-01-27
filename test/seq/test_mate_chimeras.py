@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 
 from crumbs.seq.mate_chimeras import (classify_mapped_reads, classify_chimeras,
                                       calculate_distance_distribution)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.utils.tags import NON_CHIMERIC, CHIMERA, UNKNOWN
 from crumbs.seq.seq import get_name
@@ -54,13 +54,13 @@ class FilterByMappingType(unittest.TestCase):
 
     def test_filter_chimeras(self):
         index_fpath = os.path.join(TEST_DATA_DIR, 'ref_example.fasta')
-        #Non chimeric
+        # Non chimeric
         query1 = '>seq1 1:N:0:GATCAG\nGGGATCGCAGACCCATCTCGTCAGCATGTACCCTTGCTACATTGAACTT\n'
         query2 = '>seq1 2:N:0:GATCAG\nAGGAGGGATCGGGCACCCACGGCGCGGTAGACTGAGGCCTTCTCGAACT\n'
-        #Chimeric
+        # Chimeric
         query3 = '>seq2 1:N:0:GATCAG\nAAGTTCAATGTAGCAAGGGTACATGCTGACGAGATGGGTCTGCGATCCC\n'
         query4 = '>seq2 2:N:0:GATCAG\nACGTGGATGCGGCGACGGCCCTACGGCACATACTGTTATTAGGGTCACT\n'
-        #unknown
+        # unknown
         query5 = '>seq3 1:N:0:GATCAG\nAGTGACCCTAATAACAGTATGTGCCGTAGGGCCGTCGCCGCATCCACGT\n'
         query6 = '>seq3 2:N:0:GATCAG\nGTCGTGCGCAGCCATTGAGACCTTCCTAGGGTTTTCCCCATGGAATCGG\n'
 
@@ -69,13 +69,13 @@ class FilterByMappingType(unittest.TestCase):
         in_fhand.write(query)
         in_fhand.flush()
 
-        #classify_chimeras function
+        # classify_chimeras function
         out_fhand = NamedTemporaryFile()
         chimeras_fhand = NamedTemporaryFile()
         unknown_fhand = NamedTemporaryFile()
         classify_chimeras(in_fhand, index_fpath, mate_distance=2000,
-                        out_fhand=out_fhand, chimeras_fhand=chimeras_fhand,
-                        unknown_fhand=unknown_fhand)
+                          out_fhand=out_fhand, chimeras_fhand=chimeras_fhand,
+                          unknown_fhand=unknown_fhand)
         out_fhand.flush()
         chimeras_fhand.flush()
         unknown_fhand.flush()
@@ -85,13 +85,13 @@ class FilterByMappingType(unittest.TestCase):
 
     def test_filter_chimeras_bin(self):
         index_fpath = os.path.join(TEST_DATA_DIR, 'ref_example.fasta')
-        #Non chimeric
+        # Non chimeric
         query1 = '>seq1 1:N:0:GATCAG\nGGGATCGCAGACCCATCTCGTCAGCATGTACCCTTGCTACATTGAACTT\n'
         query2 = '>seq1 2:N:0:GATCAG\nAGGAGGGATCGGGCACCCACGGCGCGGTAGACTGAGGCCTTCTCGAACT\n'
-        #Chimeric
+        # Chimeric
         query3 = '>seq2 1:N:0:GATCAG\nAAGTTCAATGTAGCAAGGGTACATGCTGACGAGATGGGTCTGCGATCCC\n'
         query4 = '>seq2 2:N:0:GATCAG\nACGTGGATGCGGCGACGGCCCTACGGCACATACTGTTATTAGGGTCACT\n'
-        #unknown
+        # unknown
         query5 = '>seq3 1:N:0:GATCAG\nAGTGACCCTAATAACAGTATGTGCCGTAGGGCCGTCGCCGCATCCACGT\n'
         query6 = '>seq3 2:N:0:GATCAG\nGTCGTGCGCAGCCATTGAGACCTTCCTAGGGTTTTCCCCATGGAATCGG\n'
 
@@ -100,7 +100,7 @@ class FilterByMappingType(unittest.TestCase):
         in_fhand.write(query)
         in_fhand.flush()
 
-        filter_chimeras_bin = os.path.join(BIN_DIR, 'classify_chimeras')
+        filter_chimeras_bin = os.path.join(SEQ_BIN_DIR, 'classify_chimeras')
         assert 'usage' in check_output([filter_chimeras_bin, '-h'])
         chimeras_fhand = NamedTemporaryFile()
         unknown_fhand = NamedTemporaryFile()
@@ -137,7 +137,7 @@ class DrawDistanceDistribution(unittest.TestCase):
         in_fhand.write(query)
         in_fhand.flush()
         stats = calculate_distance_distribution(in_fhand, index_fpath,
-                                                   max_clipping=0.05)
+                                                max_clipping=0.05)
         assert stats['outies'][1776] == 1
         assert stats['innies'][82] == 1
         assert stats['others'][1417] == 1
@@ -166,14 +166,13 @@ class DrawDistanceDistribution(unittest.TestCase):
         in_fhand.flush()
 
         distribution_fhand = NamedTemporaryFile()
-        draw_distances_distribution_bin = os.path.join(BIN_DIR,
-                                               'draw_pair_distance_distribution')
-        assert 'usage' in check_output([draw_distances_distribution_bin, '-h'])
-        cmd = [draw_distances_distribution_bin, '-r', index_fpath, '-o',
-               distribution_fhand.name, in_fhand.name]
+        draw_bin = os.path.join(SEQ_BIN_DIR, 'draw_pair_distance_distribution')
+        assert 'usage' in check_output([draw_bin, '-h'])
+        cmd = [draw_bin, '-r', index_fpath, '-o', distribution_fhand.name,
+               in_fhand.name]
         check_output(cmd)
         # raw_input(distribution_fhand.name)
 
 if __name__ == "__main__":
-    #import sys; sys.argv = ['', 'DrawDistanceDistribution']
+    # import sys; sys.argv = ['', 'DrawDistanceDistribution']
     unittest.main()

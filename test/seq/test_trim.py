@@ -25,7 +25,7 @@ from Bio.SeqRecord import SeqRecord
 from crumbs.seq.trim import (TrimLowercasedLetters, TrimEdges, TrimOrMask,
                              TrimByQuality, TrimWithBlastShort,
                              seq_to_trim_packets, TrimMatePairChimeras)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.tags import (SEQRECORD, SEQITEM, TRIMMING_RECOMMENDATIONS,
                                VECTOR, ORPHAN_SEQS, SEQS_PASSED, OTHER)
 from crumbs.seq.seq import (get_str_seq, get_annotations, get_int_qualities,
@@ -117,7 +117,7 @@ class TrimByCaseBinTest(unittest.TestCase):
     'It tests the trim_by_case binary'
 
     def test_trim_case_bin(self):
-        trim_bin = os.path.join(BIN_DIR, 'trim_by_case')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_by_case')
         assert 'usage' in check_output([trim_bin, '-h'])
 
         fastq_fhand = _make_fhand(FASTQ)
@@ -127,26 +127,26 @@ class TrimByCaseBinTest(unittest.TestCase):
 
     def test_trim_in_parallel(self):
         'It trims sequences in parallel'
-        trim_bin = os.path.join(BIN_DIR, 'trim_by_case')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_by_case')
         fastq_fhand = _make_fhand(FASTQ)
 
         result = check_output([trim_bin, '-p', '2', fastq_fhand.name])
         assert '@seq1\nTC\n+' in result
 
     def test_trim_in_pairs(self):
-        trim_bin = os.path.join(BIN_DIR, 'trim_by_case')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_by_case')
         content = '>s.f\naattACT\n>s.r\naattACT\n>s1.f\naattACT\n>s1.r\naatt\n'
         fastq_fhand = _make_fhand(content)
         orphan_fhand = NamedTemporaryFile()
         result = check_output([trim_bin, fastq_fhand.name, '--paired_reads',
                                '--orphan_file', orphan_fhand.name])
-        assert ">s.f\nACT\n>s.r\nACT" in  result
-        assert  open(orphan_fhand.name).read() == '>s1.f\nACT\n'
+        assert ">s.f\nACT\n>s.r\nACT" in result
+        assert open(orphan_fhand.name).read() == '>s1.f\nACT\n'
 
         # no orphan file
         fastq_fhand = _make_fhand(content)
         result = check_output([trim_bin, fastq_fhand.name, '--paired_reads'])
-        assert ">s.f\nACT\n>s.r\nACT" in  result
+        assert ">s.f\nACT\n>s.r\nACT" in result
 
 
 class TrimEdgesTest(unittest.TestCase):
@@ -247,7 +247,7 @@ class TrimEdgesTest(unittest.TestCase):
 
     def test_trim_edges_bin(self):
         'It tests the trim_edges binary'
-        trim_bin = os.path.join(BIN_DIR, 'trim_edges')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_edges')
         assert 'usage' in check_output([trim_bin, '-h'])
 
         fastq_fhand = _make_fhand(FASTQ2)
@@ -390,8 +390,8 @@ class TrimByQualityTest(unittest.TestCase):
         trim_quality = TrimByQuality(window=5, threshold=25, trim_right=False)
         trim_packet2 = trim(trim_quality(trim_packet))
         seq2 = trim_packet2[SEQS_PASSED][0][0]
-        assert get_int_qualities(seq2) == [40, 4, 27, 38, 40, 4, 11, 40, 40, 10,
-                                       10, 21, 3, 40, 9, 9, 12, 10, 9]
+        assert get_int_qualities(seq2) == [40, 4, 27, 38, 40, 4, 11, 40, 40,
+                                           10, 10, 21, 3, 40, 9, 9, 12, 10, 9]
 
         quals = [40, 40, 13, 11, 40, 9, 40, 4, 27, 38, 40, 4, 11, 40, 40, 10,
                  10, 21, 3, 40, 9, 9, 12, 10, 9]
@@ -419,7 +419,7 @@ class TrimByQualityTest(unittest.TestCase):
 
     def test_trim_quality_bin(self):
         'It tests the trim_edges binary'
-        trim_bin = os.path.join(BIN_DIR, 'trim_quality')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_quality')
         assert 'usage' in check_output([trim_bin, '-h'])
 
         fastq_fhand = _make_fhand(FASTQ2)
@@ -488,13 +488,13 @@ class TrimBlastShortTest(unittest.TestCase):
         blast_trim = TrimWithBlastShort(oligos=adaptors)
         fhand = StringIO(FASTQ4)
         seq_packets = read_seq_packets([fhand],
-                                            prefered_seq_classes=[SEQRECORD])
+                                       prefered_seq_classes=[SEQRECORD])
         trim_packets = list(seq_to_trim_packets(seq_packets))
         trim_packets2 = blast_trim(trim_packets[0])
         # It should trim the first and the second reads.
         res = [get_annotations(s).get(TRIMMING_RECOMMENDATIONS, {}).get(VECTOR,
                                                                         [])
-                            for l in trim_packets2[SEQS_PASSED] for s in l]
+                              for l in trim_packets2[SEQS_PASSED] for s in l]
         assert res == [[(0, 29)], [(0, 29)], []]
 
         # With SeqItems
@@ -521,7 +521,7 @@ class TrimBlastShortTest(unittest.TestCase):
 
     def test_trim_oligos_bin(self):
         'It tests the trim_blast_short binary'
-        trim_bin = os.path.join(BIN_DIR, 'trim_blast_short')
+        trim_bin = os.path.join(SEQ_BIN_DIR, 'trim_blast_short')
         assert 'usage' in check_output([trim_bin, '-h'])
 
         fastq_fhand = _make_fhand(FASTQ4)
@@ -558,7 +558,7 @@ class TrimChimericRegions(unittest.TestCase):
         assert res == [[(49, 105)], []]
 
     def test_trim_chimeras_bin(self):
-        trim_chimeras_bin = os.path.join(BIN_DIR, 'trim_mp_chimeras')
+        trim_chimeras_bin = os.path.join(SEQ_BIN_DIR, 'trim_mp_chimeras')
         assert 'usage' in check_output([trim_chimeras_bin, '-h'])
         index_fpath = os.path.join(TEST_DATA_DIR, 'ref_example.fasta')
         query1 = '@seq2 f\nGGGATCGCAGACCCATCTCGTCAGCATGTACCCTTGCTACATTGAACTT'
@@ -577,7 +577,7 @@ class TrimChimericRegions(unittest.TestCase):
                          'CATCATTGCATAAGTAACACTCAACCAACAGTGCTACAGGGTTGTAACG']
         cmd = [trim_chimeras_bin, in_fhand.name, '-r', index_fpath,
                '-o', out_fhand.name]
-        #raw_input(" ".join(cmd))
+        # raw_input(" ".join(cmd))
         check_output(cmd, stdin=in_fhand)
         counts = 0
         for seq in read_seqs([open(out_fhand.name)]):
@@ -585,7 +585,7 @@ class TrimChimericRegions(unittest.TestCase):
             counts += 1
         assert counts != 0
 
-        #With several threads
+        # With several threads
         cmd = [trim_chimeras_bin, in_fhand.name, '-r', index_fpath,
                '-o', out_fhand.name, '-p', '2']
         check_output(cmd, stdin=in_fhand)
@@ -703,5 +703,5 @@ class TrimChimericRegions(unittest.TestCase):
 #             assert get_str_seq(seq) in expected_seqs
 
 if __name__ == '__main__':
-    #import sys; sys.argv = ['', 'TrimChimericRegions']
+    # import sys; sys.argv = ['', 'TrimChimericRegions']
     unittest.main()

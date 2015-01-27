@@ -24,7 +24,7 @@ from Bio.Seq import Seq
 from crumbs.seq.transcript_orientations import TranscriptOrientator
 from crumbs.settings import get_setting
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.tags import SEQRECORD
 from crumbs.seq.seq import get_str_seq, SeqWrapper
 from crumbs.seq.seqio import read_seqs
@@ -115,7 +115,7 @@ class TestTranscriptomeOrientator(unittest.TestCase):
         filters = [{'kind': 'score_threshold', 'score_key': 'expect',
                     'max_score': 1e-10}]
         blast_params = [{'blastdb': ara_blastdb, 'program': 'blastn',
-                         'filters':filters},
+                         'filters': filters},
                         {'blastdb': cala_blastdb, 'program': 'blastn'}]
 
         orientator = TranscriptOrientator(polya_params, estscan_params,
@@ -134,7 +134,7 @@ class TestTranscriptomeOrientator(unittest.TestCase):
 
     def test_bin_transcrip_orientator(self):
         'it tests the transcript orientator binary'
-        orientate_bin = os.path.join(BIN_DIR, 'orientate_transcripts')
+        orientate_bin = os.path.join(SEQ_BIN_DIR, 'orientate_transcripts')
         assert 'usage' in check_output([orientate_bin, '-h'])
 
         in_fpath = os.path.join(TEST_DATA_DIR, 'seqs_to_orientate.fasta')
@@ -158,15 +158,15 @@ class TestTranscriptomeOrientator(unittest.TestCase):
         assert get_str_seq(init_seqs[0]) == get_str_seq(out_seqs[0])
         out_seq1 = str(out_seqs[1].object.seq.reverse_complement())
         assert str(init_seqs[1].object.seq) == out_seq1
-        assert 'polyA' in  out_seqs[1].object.description
+        assert 'polyA' in out_seqs[1].object.description
         assert str(init_seqs[3].object.seq) == str(out_seqs[3].object.seq)
         out_seq4 = str(out_seqs[4].object.seq.reverse_complement())
         assert str(init_seqs[4].object.seq) == out_seq4
-        assert 'estscan_orf' in  out_seqs[4].object.description
+        assert 'estscan_orf' in out_seqs[4].object.description
         assert str(init_seqs[5].object.seq) == str(out_seqs[5].object.seq)
         out_seq6 = str(out_seqs[6].object.seq.reverse_complement())
         assert str(init_seqs[6].object.seq) == out_seq6
-        assert 'blast arabidopsis_genes' in  out_seqs[6].object.description
+        assert 'blast arabidopsis_genes' in out_seqs[6].object.description
         cmd = [orientate_bin, '-u', estscan_matrix, '-d', blastdb1, '-d',
                blastdb2, '-g', 'blastn', '-g', 'blastn', '-v', '0.0001',
                in_fpath]
@@ -229,17 +229,17 @@ class TestTranscriptomeOrientator(unittest.TestCase):
         assert str(init_seqs[0].object.seq) == str(out_seqs[0].object.seq)
         out_seq1 = str(out_seqs[1].object.seq.reverse_complement())
         assert str(init_seqs[1].object.seq) == out_seq1
-        assert 'polyA' in  out_seqs[1].object.description
+        assert 'polyA' in out_seqs[1].object.description
         assert str(init_seqs[3].object.seq) == str(out_seqs[3].object.seq)
         out_seq4 = str(out_seqs[4].object.seq.reverse_complement())
         assert str(init_seqs[4].object.seq) == out_seq4
-        assert 'estscan_orf' in  out_seqs[4].object.description
+        assert 'estscan_orf' in out_seqs[4].object.description
         assert str(init_seqs[5].object.seq) == str(out_seqs[5].object.seq)
         out_seq6 = str(out_seqs[6].object.seq.reverse_complement())
         assert str(init_seqs[6].object.seq) == out_seq6
-        assert 'blast arabidopsis_genes' in  out_seqs[6].object.description
+        assert 'blast arabidopsis_genes' in out_seqs[6].object.description
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestTranscriptomeOrientator']
+    # import sys;sys.argv = ['', 'TestTranscriptomeOrientator']
     unittest.main()

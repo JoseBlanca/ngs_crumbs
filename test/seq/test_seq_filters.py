@@ -34,7 +34,7 @@ from crumbs.seq.filters import (FilterByLength, FilterById, FilterByQuality,
                                 FilterDustComplexity, seq_to_filterpackets,
                                 FilterByRpkm, FilterByBam, FilterAllNs,
                                 FilterBowtie2Match, FilterByFeatureTypes)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.utils.tags import (NUCL, SEQS_FILTERED_OUT, SEQS_PASSED, SEQITEM,
                                SEQRECORD)
@@ -129,7 +129,7 @@ class LengthFilterTest(unittest.TestCase):
 
     def test_filter_by_length_bin(self):
         'It uses the filter_by_length binary'
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_length')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_length')
         assert 'usage' in check_output([filter_bin, '-h'])
 
         fasta = '>s1\naCTg\n>s2\nAC\n'
@@ -205,7 +205,7 @@ class SeqListFilterTest(unittest.TestCase):
 
     def test_filter_by_name_bin(self):
         'It uses the filter_by_name binary'
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_name')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_name')
         assert 'usage' in check_output([filter_bin, '-h'])
 
         fasta = '>s1\naCTg\n>s2\nAC\n'
@@ -245,7 +245,7 @@ class QualityFilterTest(unittest.TestCase):
 
     def test_filter_by_qual_bin(self):
         'It uses the filter_by_quality binary'
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_quality')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_quality')
         assert 'usage' in check_output([filter_bin, '-h'])
 
         fastq = '@s1\naCTg\n+\n"DD"\n@s2\nAC\n+\n""\n'
@@ -316,7 +316,7 @@ class BlastMatchFilterTest(unittest.TestCase):
 
     def test_filter_blast_bin(self):
         'It test the binary of the filter_by_blast'
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_blast')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_blast')
         assert 'usage' in check_output([filter_bin, '-h'])
         blastdb = os.path.join(TEST_DATA_DIR, 'blastdbs', 'arabidopsis_genes')
 
@@ -381,7 +381,7 @@ class BlastMatchFilterTest(unittest.TestCase):
         assert ">seq\nATCATGTAGTTACACATG" in open(filtered_fhand.name).read()
 
     def test_filter_blast_bin_fastq(self):
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_blast')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_blast')
         blastdb = os.path.join(TEST_DATA_DIR, 'blastdbs', 'arabidopsis_genes')
         # With fastq
         match = 'CCAAAGTACGGTCTCACAAGCGGTCTCTTACCGGACACCGTCACCGATTTCACCCTCT'
@@ -425,7 +425,7 @@ class BlastShortFilterTest(unittest.TestCase):
         assert fail == ['seq_oligo']
 
     def test_filter_blast_bin(self):
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_blast_short')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_blast_short')
         # With fastq
         seq = 'CCAAAGTACGGTCTCCCAAGCGGTCTCTTACCGGACACCGTCACCGATTTCACCCTCT'
         oligo = 'GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT'
@@ -483,7 +483,7 @@ class ComplexityFilterTest(unittest.TestCase):
     @staticmethod
     def test_filter_by_dust_bin():
         'It uses the filter_by_complexity binary'
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_complexity')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_complexity')
         assert 'usage' in check_output([filter_bin, '-h'])
 
         fasta = '>s1\nTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\n'
@@ -577,7 +577,7 @@ class FilterBowtie2Test(unittest.TestCase):
 
     @staticmethod
     def test_filter_by_bowtie2_bin():
-        filter_bin = os.path.join(BIN_DIR, 'filter_by_bowtie2')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_by_bowtie2')
         assert 'usage' in check_output([filter_bin, '-h'])
         index_fpath = os.path.join(TEST_DATA_DIR, 'arabidopsis_genes')
 
@@ -639,7 +639,7 @@ class NsFilterTest(unittest.TestCase):
 
     @staticmethod
     def test_filter_ns_bin():
-        filter_bin = os.path.join(BIN_DIR, 'filter_all_ns')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_all_ns')
         assert 'usage' in check_output([filter_bin, '-h'])
 
         fasta = '>s1\nNNNNNnnnnn----------------nnnnnnnnnnnNNNNNNNNnnn***\n'

@@ -13,7 +13,7 @@ from crumbs.vcf.filters import (PASSED, FILTERED_OUT, group_in_filter_packets,
                                 filter_snvs, MonomorphicFilter,
                                 WeirdSegregationFilter,
                                 WeirdRecombFilter)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 
 # Method could be a function
@@ -108,7 +108,7 @@ class FiltersTest(unittest.TestCase):
         # some samples
         packet = self.filter_vcf(open(VCF_PATH),
                                  filter_=CallRateFilter(min_calls=2,
-                                         samples_to_consider=('pepo', 'mu16')))
+                                        samples_to_consider=('pepo', 'mu16')))
         res = self.eval_prop_in_packet(packet, 'num_called')
         expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
         assert res == expected
@@ -285,7 +285,7 @@ class BinaryFilterTest(unittest.TestCase):
         assert 'SNVs passsed: 3' in log_fhand.getvalue()
 
     def test_biallelic_binary(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_biallelic')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_biallelic')
 
         assert 'positional' in check_output([binary, '-h'])
 
@@ -325,7 +325,7 @@ class BinaryFilterTest(unittest.TestCase):
         in_fhand.close()
 
     def test_call_rate_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_missing')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_missing')
 
         assert 'positional' in check_output([binary, '-h'])
 
@@ -339,7 +339,7 @@ class BinaryFilterTest(unittest.TestCase):
         assert 'fileDate' in stdout
 
     def test_obs_het_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_het')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_het')
 
         assert 'positional' in check_output([binary, '-h'])
 
@@ -353,7 +353,7 @@ class BinaryFilterTest(unittest.TestCase):
         assert 'fileDate' in stdout
 
     def test_maf_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_maf')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
 
         assert 'positional' in check_output([binary, '-h'])
 
@@ -373,7 +373,7 @@ class BinaryFilterTest(unittest.TestCase):
         cmd1 = ['zcat', vcf_fpath]
         process1 = Popen(cmd1, stdout=PIPE)
         log_fhand = NamedTemporaryFile()
-        binary = join(BIN_DIR, 'filter_vcf_by_maf')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
         cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name]
         process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
         stdout = process2.communicate()[0]
@@ -383,7 +383,7 @@ class BinaryFilterTest(unittest.TestCase):
         vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
         cmd1 = ['cat', vcf_fpath]
         process1 = Popen(cmd1, stdout=PIPE)
-        binary = join(BIN_DIR, 'filter_vcf_by_maf')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
         cmd = [binary,  '-m', '0.7', '-c', '2', '-l', log_fhand.name]
         process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
         stdout, stderr = process2.communicate()
@@ -391,7 +391,7 @@ class BinaryFilterTest(unittest.TestCase):
         assert 'tell member' in stderr
 
     def test_by_sample_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_sample')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_sample')
 
         assert 'positional' in check_output([binary, '-h'])
 
@@ -450,14 +450,14 @@ class ConsistentSegregationTest(unittest.TestCase):
 #         plot_dir.close()
 
     def test_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_segregation')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_segregation')
         cmd = [binary, '-h']
         process = Popen(cmd, stderr=PIPE, stdout=PIPE)
         stdout = process.communicate()[0]
         assert 'usage' in stdout
 
         vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_segregation')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_segregation')
         cmd = [binary, '-n', '2', '-m', '200', '-s', '1_14_1_gbs', '-s',
                '1_17_1_gbs', '-s', '1_18_4_gbs', '-s', '1_19_4_gbs', '-s',
                '1_26_1_gbs', '-s', '1_27_1_gbs', '-s', '1_2_2_gbs', '-s',
@@ -508,7 +508,7 @@ class ConsistentRecombinationTest(unittest.TestCase):
         assert 'SNVs processed: 282' in fhand.getvalue()
 
     def test_bin(self):
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_recomb')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_recomb')
         cmd = [binary, '-h']
         process = Popen(cmd, stderr=PIPE, stdout=PIPE)
         stdout = process.communicate()[0]
@@ -518,7 +518,7 @@ class ConsistentRecombinationTest(unittest.TestCase):
         vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
         cmd1 = ['cat', vcf_fpath]
         process1 = Popen(cmd1, stdout=PIPE)
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_recomb')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_recomb')
         cmd = [binary, '--pop_type', 'ril_self', '--window', '60']
         process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
         stdout, stderr = process2.communicate()
@@ -529,7 +529,7 @@ class ConsistentRecombinationTest(unittest.TestCase):
         vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
         cmd1 = ['zcat', vcf_fpath]
         process1 = Popen(cmd1, stdout=PIPE)
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_recomb')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_recomb')
         cmd = [binary, '--pop_type', 'ril_self', '--window', '60']
         process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
         stdout, stderr = process2.communicate()
@@ -538,7 +538,7 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
         # with a standard file
         vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
-        binary = join(BIN_DIR, 'filter_vcf_by_weird_recomb')
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_weird_recomb')
         cmd = [binary, '--pop_type', 'ril_self', vcf_fpath]
         process = Popen(cmd, stderr=PIPE, stdout=PIPE)
         stdout, stderr = process.communicate()

@@ -32,7 +32,7 @@ from crumbs.statistics import (IntCounter, draw_histogram_ascii, IntBoxplot,
                                calculate_nx, BestItemsKeeper,
                                count_seqs)
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.seq.seqio import read_seqs
 from crumbs.seq.seq import SeqWrapper
 from crumbs.utils.tags import SEQRECORD, SEQITEM
@@ -311,7 +311,7 @@ class CalculateStatsTest(unittest.TestCase):
     def test_stats_bin(self):
         'It tests the statistics binary'
 
-        bin_ = join(BIN_DIR, 'calculate_stats')
+        bin_ = join(SEQ_BIN_DIR, 'calculate_stats')
 
         # help
         assert 'usage' in check_output([bin_, '-h'])
@@ -365,7 +365,7 @@ class CalculateStatsTest(unittest.TestCase):
 
     def test_count_seqs_bin(self):
 
-        bin_ = join(BIN_DIR, 'count_seqs')
+        bin_ = join(SEQ_BIN_DIR, 'count_seqs')
 
         # help
         assert 'usage' in check_output([bin_, '-h'])

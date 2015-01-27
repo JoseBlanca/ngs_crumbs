@@ -20,7 +20,7 @@ from tempfile import NamedTemporaryFile
 from StringIO import StringIO
 from gzip import GzipFile
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.statistics import count_seqs
 from crumbs.utils import BZ2File
 from crumbs.seq.seqio import read_seqs
@@ -43,7 +43,7 @@ class CatTest(unittest.TestCase):
 
     def test_cat_seqs(self):
         'It test the cat seqs'
-        cat_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        cat_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
 
         # help
         assert 'usage' in check_output([cat_bin, '-h'])
@@ -95,7 +95,7 @@ class CatTest(unittest.TestCase):
     def test_compressed_output(self):
         'It writes a gziped file'
         in_fhand = self.make_fasta()
-        cat_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        cat_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
 
         # bgzf does not work with STDOUT
         try:
@@ -110,46 +110,46 @@ class CatTest(unittest.TestCase):
         out_fhand = NamedTemporaryFile()
         check_output([cat_bin, '-Z', '-o', out_fhand.name, in_fhand.name])
         result = GzipFile(out_fhand.name).read()
-        assert '\nACTATCATGGCAGATA\n' in  result
+        assert '\nACTATCATGGCAGATA\n' in result
 
         # gzip
         result = check_output([cat_bin, '-z', in_fhand.name])
         result = GzipFile(fileobj=StringIO(result)).read()
-        assert '\nACTATCATGGCAGATA\n' in  result
+        assert '\nACTATCATGGCAGATA\n' in result
 
         # bzip2
         result = check_output([cat_bin, '-B', in_fhand.name])
         result = BZ2File(StringIO(result)).read()
-        assert '\nACTATCATGGCAGATA\n' in  result
+        assert '\nACTATCATGGCAGATA\n' in result
 
     def test_gzipped_input(self):
         'It can read compressed files'
         # we need a compressed file
         in_fhand = self.make_fasta()
-        cat_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        cat_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
         out_fhand = NamedTemporaryFile()
         check_output([cat_bin, '-Z', '-o', out_fhand.name, in_fhand.name])
         result = GzipFile(out_fhand.name).read()
-        assert '\nACTATCATGGCAGATA\n' in  result
+        assert '\nACTATCATGGCAGATA\n' in result
 
         result = check_output([cat_bin, out_fhand.name])
-        assert '>seq1\nACTATCATGGCAGATA\n' in  result
+        assert '>seq1\nACTATCATGGCAGATA\n' in result
 
     def test_bzipped2_input(self):
         # we need a compressed file
         in_fhand = self.make_fasta()
-        cat_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        cat_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
         out_fhand = NamedTemporaryFile()
         check_output([cat_bin, '-B', '-o', out_fhand.name, in_fhand.name])
         result = BZ2File(out_fhand.name).read()
-        assert '\nACTATCATGGCAGATA\n' in  result
+        assert '\nACTATCATGGCAGATA\n' in result
 
         result = check_output([cat_bin, out_fhand.name])
-        assert '>seq1\nACTATCATGGCAGATA\n' in  result
+        assert '>seq1\nACTATCATGGCAGATA\n' in result
 
     def test_version(self):
         'It can return its version number'
-        guess_bin = os.path.join(BIN_DIR, 'cat_seqs')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'cat_seqs')
 
         stderr = NamedTemporaryFile()
         check_output([guess_bin, '--version'], stderr=stderr)
@@ -161,7 +161,7 @@ class SeqHeadTest(unittest.TestCase):
 
     def test_seq_head(self):
         'It tests the seq head'
-        head_bin = os.path.join(BIN_DIR, 'seq_head')
+        head_bin = os.path.join(SEQ_BIN_DIR, 'seq_head')
         # assert check_output([head_bin, '-h']).startswith('usage')
 
         # get one seq
@@ -177,7 +177,7 @@ class SampleSeqTest(unittest.TestCase):
     'It tests the seq sample binary'
 
     def test_sample_seq(self):
-        sample_seq = os.path.join(BIN_DIR, 'sample_seqs')
+        sample_seq = os.path.join(SEQ_BIN_DIR, 'sample_seqs')
         assert 'usage' in check_output([sample_seq, '-h'])
 
         fasta_fhand = NamedTemporaryFile()
@@ -206,5 +206,5 @@ class SampleSeqTest(unittest.TestCase):
         assert count_seqs(read_seqs([StringIO(result)]))['num_seqs'] == 2
 
 if __name__ == '__main__':
-#    import sys;sys.argv = ['', 'SampleSeqTest']
+    # import sys;sys.argv = ['', 'SampleSeqTest']
     unittest.main()

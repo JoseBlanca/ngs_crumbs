@@ -9,20 +9,20 @@ import os
 from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import BAM_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 
 
 class BinTests(unittest.TestCase):
     def test_draw_coverage(self):
-        bin_ = os.path.join(BIN_DIR, 'draw_coverage_hist')
+        bin_ = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
         fhand = NamedTemporaryFile(suffix='.png')
         out = check_output([bin_, bam_fpath, '-o', fhand.name])
         assert '147' in out
 
     def test_mapq_hist(self):
-        bin_ = os.path.join(BIN_DIR, 'draw_mapq_hist')
+        bin_ = os.path.join(BAM_BIN_DIR, 'draw_mapq_hist')
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
         fhand = NamedTemporaryFile(suffix='.png')
         null = open(os.devnull, 'w')

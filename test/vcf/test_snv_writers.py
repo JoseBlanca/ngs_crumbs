@@ -14,7 +14,7 @@ from crumbs.utils.file_utils import compress_with_bgzip, index_vcf_with_tabix
 from crumbs.vcf.writers import (IlluminaWriter, _replace_snvs_with_iupac,
                                 RQTLWriter, DEF_PHYS_TO_GENET_DIST,
                                 write_parent_checker)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 
 # Method could be a function
@@ -185,7 +185,7 @@ ref 10 . A C 10 PASS .
             pass
 
     def test_run_binary(self):
-        binary = pjoin(BIN_DIR, 'write_snps_for_illumina')
+        binary = pjoin(VCF_BIN_DIR, 'write_snps_for_illumina')
         assert 'usage' in check_output([binary, '-h'])
 
         reference = pjoin(TEST_DATA_DIR, 'sample_ref.fasta')
@@ -243,14 +243,14 @@ class RQTLWriterTest(unittest.TestCase):
         vcf_fhand.write(vcf)
         vcf_fhand.flush()
 
-        binary = pjoin(BIN_DIR, 'write_snps_for_rqtl')
+        binary = pjoin(VCF_BIN_DIR, 'write_snps_for_rqtl')
         assert 'usage' in check_output([binary, '-h'])
 
         cmd = [binary, vcf_fhand.name]
         stdout = check_output(cmd)
         assert stdout == self.expected
 
-        binary = pjoin(BIN_DIR, 'write_snps_for_rqtl')
+        binary = pjoin(VCF_BIN_DIR, 'write_snps_for_rqtl')
         assert 'usage' in check_output([binary, '-h'])
 
         cmd = [binary, '-d', '100000', vcf_fhand.name]
@@ -324,7 +324,7 @@ S6\tB\tB\tB
         vcf_fhand.write(vcf)
         vcf_fhand.flush()
 
-        binary = pjoin(BIN_DIR, 'write_snps_for_parent_checker')
+        binary = pjoin(VCF_BIN_DIR, 'write_snps_for_parent_checker')
         process = Popen([binary, '-h'], stderr=PIPE, stdout=PIPE)
         stdout = process.communicate()[0]
         assert 'It writes the snps in ParentChecker format' in stdout

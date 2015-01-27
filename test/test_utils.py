@@ -16,12 +16,9 @@
 import unittest
 from tempfile import NamedTemporaryFile
 from os.path import exists
-from os.path import join as pjoin
 from os import remove
 from StringIO import StringIO
-import gzip
 
-from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.utils.file_utils import (compress_with_bgzip, uncompress_gzip,
                                      fhand_is_seekable,
                                      wrap_in_buffered_reader,

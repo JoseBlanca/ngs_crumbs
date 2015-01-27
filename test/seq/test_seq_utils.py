@@ -18,7 +18,6 @@
 # pylint: disable=C0111
 
 import unittest
-from cStringIO import StringIO
 from tempfile import NamedTemporaryFile
 import os.path
 from subprocess import check_output
@@ -26,7 +25,7 @@ from subprocess import check_output
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.seq.seq import assing_kind_to_seqs, get_str_seq
 from crumbs.seq.utils.seq_utils import (uppercase_length, ChangeCase,
                                         get_uppercase_segments)
@@ -95,7 +94,7 @@ class ChangeCaseTest(unittest.TestCase):
 
     def test_bin(self):
         'It tests the trim seqs binary'
-        change_bin = os.path.join(BIN_DIR, 'change_case')
+        change_bin = os.path.join(SEQ_BIN_DIR, 'change_case')
         assert 'usage' in check_output([change_bin, '-h'])
 
         fastq = '@seq1\naTCgt\n+\n?????\n@seq2\natcGT\n+\n?????\n'

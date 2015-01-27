@@ -30,7 +30,7 @@ from crumbs.seq.seq import SeqWrapper, SeqItem
 from crumbs.utils.tags import SEQITEM
 from crumbs.seq.bulk_filters import (filter_duplicates, _read_pairs,
                                      _seqitem_pairs_equal)
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.exceptions import UndecidedFastqVersionError
 from crumbs.utils.file_utils import flush_fhand
@@ -206,7 +206,7 @@ class FilterDuplicatesTest(unittest.TestCase):
         in_fhand.write(seqs)
         in_fhand.flush()
 
-        filter_bin = os.path.join(BIN_DIR, 'filter_duplicates')
+        filter_bin = os.path.join(SEQ_BIN_DIR, 'filter_duplicates')
         assert 'usage' in check_output([filter_bin, '-h'])
         result = check_output([filter_bin, in_fhand.name])
         assert'@seq1.f\naaaa\n+\nHHHH\n@seq2.f\naaab\n+\nHHHH\n' in result

@@ -27,7 +27,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.seq.seqio import (guess_seq_type, fastaqual_to_fasta, seqio,
                               _write_seqrecords, _read_seqrecords,
                               _itemize_fastx, read_seqs, write_seqs)
@@ -207,7 +207,7 @@ class SimpleIOTest(unittest.TestCase):
 
         fhand = StringIO('>s1\nACTG\n>s2 desc\nACTG\n')
         seqs = list(read_seqs([fhand], out_format='fasta',
-                        prefered_seq_classes=[SEQITEM]))
+                              prefered_seq_classes=[SEQITEM]))
         fhand = StringIO()
         write_seqs(seqs, fhand)
         assert fhand.getvalue() == '>s1\nACTG\n>s2 desc\nACTG\n'
@@ -222,7 +222,7 @@ class PipingTest(unittest.TestCase):
             seq_fhand.write('>s\nACTG\n')
         seq_fhand.flush()
         in_fpath = seq_fhand.name
-        seq_head = os.path.join(BIN_DIR, 'seq_head')
+        seq_head = os.path.join(SEQ_BIN_DIR, 'seq_head')
 
         process_seq = Popen([seq_head, '-n', str(n_seqs), in_fpath],
                             stdout=PIPE)

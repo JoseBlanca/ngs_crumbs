@@ -6,7 +6,7 @@ from subprocess import check_output
 import pysam
 
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import BAM_BIN_DIR
 from crumbs.bam.statistics import (count_reads, ReferenceStats, ReadStats,
                                    CoverageCounter, _flag_to_binary,
                                    get_reference_counts,
@@ -55,7 +55,7 @@ class StatsTest(unittest.TestCase):
     def test_ref_stats_bin(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
 
-        bin_ = os.path.join(BIN_DIR, 'calculate_ref_stats')
+        bin_ = os.path.join(BAM_BIN_DIR, 'calculate_ref_stats')
         # help
         assert 'usage' in check_output([bin_, '-h'])
 
@@ -99,9 +99,9 @@ class StatsTest(unittest.TestCase):
         assert counts[1] == {'unmapped_reads': 0, 'reference': 'reference2',
                              'length': 1714, 'mapped_reads': 9}
         counts = get_reference_counts_dict([bam_fpath])
-        assert  None in counts.keys()
-        assert  'reference2' in counts.keys()
-        assert  'reference2' in counts.keys()
+        assert None in counts.keys()
+        assert 'reference2' in counts.keys()
+        assert 'reference2' in counts.keys()
 
     def test_get_readgroup(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
@@ -129,7 +129,7 @@ class StatsTest(unittest.TestCase):
     def test_bin_mapped_counts(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
 
-        bin_ = os.path.join(BIN_DIR, 'count_mapped_by_rg')
+        bin_ = os.path.join(BAM_BIN_DIR, 'count_mapped_by_rg')
         cmd = [bin_, bam_fpath]
         output = check_output(cmd)
         assert "group2+454" in output

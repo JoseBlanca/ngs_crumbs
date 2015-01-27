@@ -7,7 +7,7 @@ from StringIO import StringIO
 
 
 from crumbs.utils.test_utils import TEST_DATA_DIR
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import VCF_BIN_DIR
 from crumbs.vcf.annotation import (CloseToSnv, HighVariableRegion,
                                    CloseToLimit, MafDepthLimit, CapEnzyme,
                                    AminoChangeAnnotator, IsVariableAnnotator,
@@ -604,7 +604,7 @@ class TestInfoMappers(unittest.TestCase):
 
 class BinaryTest(unittest.TestCase):
     def test_run_binary(self):
-        binary = join(BIN_DIR, 'annotate_snvs')
+        binary = join(VCF_BIN_DIR, 'annotate_snvs')
         assert 'usage' in check_output([binary, '-h'])
 
         config = '''[1]

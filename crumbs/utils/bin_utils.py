@@ -20,6 +20,9 @@ from crumbs import __version__ as version
 
 BIN_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..',
                                        'bin'))
+SEQ_BIN_DIR = os.path.join(BIN_DIR, 'seq')
+VCF_BIN_DIR = os.path.join(BIN_DIR, 'vcf')
+BAM_BIN_DIR = os.path.join(BIN_DIR, 'bam')
 
 
 def main(funct):

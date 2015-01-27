@@ -29,7 +29,7 @@ from crumbs.seq.pairs import (match_pairs, interleave_pairs,
                               _parse_pair_direction_and_name)
 from crumbs.iterutils import flat_zip_longest
 from crumbs.utils.tags import FWD, SEQRECORD, SEQITEM
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.seq.seq import get_str_seq
 from crumbs.seq.seqio import read_seqs, assing_kind_to_seqs
@@ -330,7 +330,7 @@ class PairMatcherbinTest(unittest.TestCase):
     'It test the matepair binary'
     def test_pair_matcher_bin(self):
         'It test the pair matcher binary'
-        pair_matcher_bin = os.path.join(BIN_DIR, 'pair_matcher')
+        pair_matcher_bin = os.path.join(SEQ_BIN_DIR, 'pair_matcher')
         assert 'usage' in check_output([pair_matcher_bin, '-h'])
 
         in_fpath = os.path.join(TEST_DATA_DIR, 'pairend5.sfastq')
@@ -425,8 +425,8 @@ class InterleaveBinTest(unittest.TestCase):
 
     def test_binaries(self):
         'It test the binaries'
-        interleave_bin = os.path.join(BIN_DIR, 'interleave_pairs')
-        deinterleave_bin = os.path.join(BIN_DIR, 'deinterleave_pairs')
+        interleave_bin = os.path.join(SEQ_BIN_DIR, 'interleave_pairs')
+        deinterleave_bin = os.path.join(SEQ_BIN_DIR, 'deinterleave_pairs')
         assert 'usage' in check_output([interleave_bin, '-h'])
         assert 'usage' in check_output([deinterleave_bin, '-h'])
 
@@ -472,12 +472,12 @@ class InterleaveBinTest(unittest.TestCase):
 
     def test_version(self):
         'It can return its version number'
-        guess_bin = os.path.join(BIN_DIR, 'interleave_pairs')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'interleave_pairs')
         stderr = NamedTemporaryFile()
         check_output([guess_bin, '--version'], stderr=stderr)
         assert 'from seq_crumbs version:' in open(stderr.name).read()
 
-        guess_bin = os.path.join(BIN_DIR, 'deinterleave_pairs')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'deinterleave_pairs')
         stderr = NamedTemporaryFile()
         check_output([guess_bin, '--version'], stderr=stderr)
         assert 'from seq_crumbs version:' in open(stderr.name).read()

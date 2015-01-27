@@ -19,7 +19,7 @@ import os.path
 from tempfile import NamedTemporaryFile
 from subprocess import check_output, CalledProcessError
 
-from crumbs.utils.bin_utils import BIN_DIR
+from crumbs.utils.bin_utils import SEQ_BIN_DIR
 
 # pylint: disable=R0201
 # pylint: disable=R0904
@@ -49,13 +49,13 @@ class FastaQualToFastqTest(unittest.TestCase):
         fasta_fhand = _make_fhand(FASTA)
         qual_fhand = _make_fhand(QUAL)
 
-        seqio_bin = os.path.join(BIN_DIR, 'fastaqual_to_fastq')
+        seqio_bin = os.path.join(SEQ_BIN_DIR, 'fastaqual_to_fastq')
         assert 'usage' in check_output([seqio_bin, '-h'])
 
         out_fhand = NamedTemporaryFile()
         check_output([seqio_bin, '-o', out_fhand.name,
                       fasta_fhand.name, qual_fhand.name])
-        assert "@seq1\natctagtc\n+" in  open(out_fhand.name).read()
+        assert "@seq1\natctagtc\n+" in open(out_fhand.name).read()
 
 
 class SeqioBinTest(unittest.TestCase):
@@ -63,20 +63,19 @@ class SeqioBinTest(unittest.TestCase):
 
     def test_seqio_bin(self):
         'It test the seqio binary'
-        seqio_bin = os.path.join(BIN_DIR, 'convert_format')
+        seqio_bin = os.path.join(SEQ_BIN_DIR, 'convert_format')
         assert 'usage' in check_output([seqio_bin, '-h'])
 
         # get one seq
         fasta_fhand = _make_fhand(FASTA)
-        qual_fhand = _make_fhand(QUAL)
-        fastq_fhand = _make_fhand(FASTQ)
 
         # fasta to fastq should fail
         out_fhand = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
         try:
             print check_output([seqio_bin, '-o', out_fhand.name,
-                          fasta_fhand.name, '-f', 'fastq' ], stderr=stderr)
+                                fasta_fhand.name, '-f', 'fastq'],
+                               stderr=stderr)
             self.fail('Error expected')
         except CalledProcessError:
             assert 'No qualities available' in open(stderr.name).read()
@@ -84,7 +83,6 @@ class SeqioBinTest(unittest.TestCase):
         # bad_format_fastq
         bad_fastq_fhand = _make_fhand(FASTQ + 'aklsjhdas')
         fasta_out_fhand = NamedTemporaryFile()
-        qual_out_fhand = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
         try:
             print check_output([seqio_bin, '-o', fasta_out_fhand.name,
@@ -103,13 +101,13 @@ class SeqioBinTest(unittest.TestCase):
                       'fastq-illumina', fastq_fhand.name, fastq_fhand2.name],
                      stderr=stderr)
         out_fastq = open(fastq_out_fhand.name).read()
-        assert '+\n^^^^^\n@seq1\natcgt' in  out_fastq
+        assert '+\n^^^^^\n@seq1\natcgt' in out_fastq
 
         # test stdin
         fasta_out_fhand = NamedTemporaryFile()
         check_output([seqio_bin, '-o', fasta_out_fhand.name, '-f', 'fasta'],
-                      stdin=open(fastq_fhand.name))
-        assert ">seq1\natcgt" in  open(fasta_out_fhand.name).read()
+                     stdin=open(fastq_fhand.name))
+        assert ">seq1\natcgt" in open(fasta_out_fhand.name).read()
 
         # fastq to fasta
         fastq_fhand = NamedTemporaryFile()
@@ -118,13 +116,13 @@ class SeqioBinTest(unittest.TestCase):
         fasta_out_fhand = NamedTemporaryFile()
         stderr = NamedTemporaryFile()
         check_output([seqio_bin, '-o', fasta_out_fhand.name, '-f',
-                          'fasta', fastq_fhand.name], stderr=stderr)
+                      'fasta', fastq_fhand.name], stderr=stderr)
         out_fasta = open(fasta_out_fhand.name).read()
         assert ">seq1\naaaaaa\n" == out_fasta
 
     def test_version(self):
         'It can return its version number'
-        guess_bin = os.path.join(BIN_DIR, 'convert_format')
+        guess_bin = os.path.join(SEQ_BIN_DIR, 'convert_format')
         stderr = NamedTemporaryFile()
         check_output([guess_bin, '--version'], stderr=stderr)
         assert 'from seq_crumbs version:' in open(stderr.name).read()
