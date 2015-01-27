@@ -164,5 +164,4 @@ class Smoother(object):
         axes.set_ylim(ymin2d, ymax2d)
         xmin, xmax = axes.get_xlim()
         if self.recomb_threshold is not None:
-            print self.recomb_threshold, xmin, xmax
             axes.hlines(self.recomb_threshold, xmin, xmax, color='r')
