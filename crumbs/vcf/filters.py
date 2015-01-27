@@ -25,7 +25,7 @@ from crumbs.iterutils import group_in_packets
 from crumbs.iterutils import RandomAccessIterator
 
 from crumbs.vcf.snv import VCFReader, VCFWriter, DEF_MIN_CALLS_FOR_POP_STATS
-from crumbs.vcf.ld import _calc_recomb_rate
+from crumbs.vcf.ld import calc_recomb_rate
 from crumbs.vcf import snv
 
 
@@ -543,7 +543,7 @@ def _calculate_segregation_rates(snvs, pop_type, snps_in_window,
             try:
                 recomb_rate = recomb_cache[index]
             except KeyError:
-                recomb_rate = _calc_recomb_rate(calls1, calls2, pop_type)
+                recomb_rate = calc_recomb_rate(calls1, calls2, pop_type)
                 if recomb_rate is None:
                     recomb_rate = float('nan')
                 else:
