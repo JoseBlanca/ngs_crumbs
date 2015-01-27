@@ -651,7 +651,7 @@ class BinaryTest(unittest.TestCase):
         cmd = [binary, FREEBAYES3_VCF_PATH, '-f', config_fhand.name]
         #raw_input(' '.join(cmd))
         result = check_output(cmd)
-        print result
+        #print result
         assert 'cs60_0.70\t' in result
         assert 'CAP=MmeI' in result
         assert 'HIS1=True' in result
