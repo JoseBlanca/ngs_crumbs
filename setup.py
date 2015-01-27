@@ -116,9 +116,12 @@ external_executables = find_data_file(platform_bin_dir, '*')
 
 def get_scripts():
     scripts = []
-    for file_ in os.listdir('bin'):
-        if not file_.endswith('.error'):
-            scripts.append(os.path.join('bin', file_))
+    bin_dirs = ('bin', 'bin/seq', 'bin/bam', 'bin/vcf')
+    for bin_dir in bin_dirs:
+        for file_ in os.listdir(bin_dir):
+            if file_.endswith('.error') or file_ in ('seq', 'bam', 'vcf'):
+                continue
+            scripts.append(os.path.join(bin_dir, file_))
     return scripts
 
 
