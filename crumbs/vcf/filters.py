@@ -543,7 +543,7 @@ def _calculate_segregation_rates(snvs, pop_type, snps_in_window,
             try:
                 recomb_rate = recomb_cache[index]
             except KeyError:
-                recomb_rate = _calc_recomb_rate(calls1, calls2, pop_type)
+                recomb_rate = calc_recomb_rate(calls1, calls2, pop_type)
                 if recomb_rate is None:
                     recomb_rate = float('nan')
                 else:

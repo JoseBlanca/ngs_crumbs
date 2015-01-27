@@ -1,10 +1,7 @@
 from __future__ import division
-from itertools import chain
 from collections import Counter, namedtuple
 
 from scipy.stats import fisher_exact as scipy_fisher
-
-from vcf import Reader as pyvcfReader
 
 from crumbs.vcf.statistics import choose_samples
 from crumbs.iterutils import RandomAccessIterator
@@ -169,7 +166,7 @@ def _count_biallelic_haplotypes(calls1, calls2, return_alleles=False):
         return counts
 
 
-def _xcalc_recomb_rate(calls1, calls2, pop_type):
+def calc_recomb_rate(calls1, calls2, pop_type):
     haplo_count = _count_biallelic_haplotypes(calls1, calls2)
     if haplo_count is None:
         return None
