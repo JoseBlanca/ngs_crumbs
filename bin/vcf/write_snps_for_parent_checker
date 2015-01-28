@@ -82,7 +82,7 @@ def _parse_args(parser):
     args['log'] = parsed_args.log
     args['smooth_threshold'] = parsed_args.smooth_threshold
     args['recomb_threshold'] = parsed_args.recomb_threshold
-    
+
     return args
 
 
