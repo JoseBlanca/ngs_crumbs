@@ -139,13 +139,13 @@ class ABCodingTest(unittest.TestCase):
         fhand = StringIO(self.VCF_HEADER + vcf)
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
                         parent_index_threshold=0.9, smooth_threhsold=0.6,
-                        recomb_threshold=2)
+                        recomb_threshold=2, window=7)
         result = coder.recode_genotypes(samples=coder.offspring)
-        expected = '''11 AA,BB,BB,AB
-14 AA,BB,BB,AB
-15 AA,BB,BB,AB
-16 AA,BB,BB,AB
-17 AA,BB,BB,AB
+        expected = '''11 ..,BB,BB,AA
+14 AA,BB,BB,AA
+15 AA,BB,BB,AA
+16 AA,BB,BB,AA
+17 AA,BB,BB,AA
 18 AA,BB,BB,AB
 19 AA,BB,BB,AB
 20 AA,BB,BB,AB
@@ -157,6 +157,10 @@ class ABCodingTest(unittest.TestCase):
 
         fhand = NamedTemporaryFile(suffix='.png')
         coder.plot_smooth_hist(fhand)
+
+        #TODO. Does one missing allele affects the recomb counting?
+        #TODO. Is there any continue in the fors? 
+        
 
 if __name__ == "__main__":
 #     import sys;sys.argv = ['', 'FilterTest.test_close_to_filter']
