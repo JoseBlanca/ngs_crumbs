@@ -27,6 +27,7 @@ try:
     from pysam.csamtools import Samfile
 except ImportError:
     from pysam import Samfile
+
 from crumbs.statistics import (draw_histogram_ascii, IntCounter, LABELS,
                                BestItemsKeeper)
 
@@ -303,35 +304,58 @@ def get_reference_counts(bam_fpath):
 MAPQS_TO_CALCULATE = (0, 20, 30, 40)
 
 
+def get_rgs_from_samfiles(bams):
+    rgs = {}
+    for bam in bams:
+        readgroups = get_bam_readgroups(bam)
+        if not readgroups:
+            continue
+        for rg in readgroups:
+            rgs[rg['ID']] = rg
+    if not rgs:
+        rgs[None] = {'LB': None, 'ID': None, 'PL': None, 'SM': None}
+    return rgs
+
+
 class GenomeCoverages(object):
     def __init__(self, bam_fhands, mapqs=MAPQS_TO_CALCULATE):
-        self._bam_fhands = bam_fhands
+        self._bams = [Samfile(bam_fhand.name) for bam_fhand in bam_fhands]
         self.mapqs_to_calculate = mapqs
-        self._counters = {mapq: IntCounter() for mapq in mapqs}
+        self.rgs = get_rgs_from_samfiles(self._bams)
+        self._counters = {}
+        for sample in self.samples:
+            self._counters[sample] = {mapq: IntCounter() for mapq in mapqs}
         self._calculate()
 
     def __len__(self):
-        return len(self._counters)
+        return len([c for sample in self.samples for c in self._counters[sample].values()])
 
     def _calculate(self):
-        for bam_fhand in self._bam_fhands:
-            samfile = Samfile(bam_fhand.name)
+        for samfile in self._bams:
             for column in samfile.pileup(stepper='all', max_depth=100000):
                 self._add(column)
 
     def _add(self, column):
-        column_coverages = Counter()
-        mapqs_in_column = [r.alignment.mapq for r in column.pileups]
-        for read_mapq in mapqs_in_column:
+        rgs = self.rgs
+        column_coverages = {rg['SM']: Counter()for rg in rgs.values()}
+        for pileup_read in column.pileups:
+            alignment = pileup_read.alignment
+            read_mapq = alignment.mapq
+            rg = [tag[1] for tag in alignment.tags if tag[0] == 'RG']
+            sample = rgs[rg[0]]['SM'] if rg else None
             for mapq_to_calc in self.mapqs_to_calculate:
                 if read_mapq > mapq_to_calc:
-                    column_coverages[mapq_to_calc] += 1
+                    column_coverages[sample][mapq_to_calc] += 1
+        for sample, counts in column_coverages.items():
+            for map_to_calc, count in counts.items():
+                self._counters[sample][map_to_calc][count] += 1
 
-        for map_to_calc, count in column_coverages.items():
-            self._counters[map_to_calc][count] += 1
+    def get_per_sample_mapq_counters(self, sample):
+        return self._counters.get(sample, None)
 
-    def get_mapq_counter(self, mapq):
-        return self._counters.get(mapq, None)
+    @property
+    def samples(self):
+        return list(set([rg['SM'] for rg in self.rgs.values()]))
 
 
 def get_genome_coverage(bam_fhands):
@@ -400,4 +424,3 @@ def mapped_count_by_rg(bam_fpaths, mapqx=None):
             else:
                 counter_by_rg[rg]['mapped'] += 1
     return counter_by_rg
-

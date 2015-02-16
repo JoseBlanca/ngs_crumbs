@@ -16,6 +16,7 @@
 import os.path
 import unittest
 from subprocess import check_output
+from tempfile import NamedTemporaryFile
 
 import pysam
 
@@ -27,6 +28,7 @@ from crumbs.bam.statistics import (count_reads, ReferenceStats, ReadStats,
                                    get_reference_counts_dict,
                                    get_genome_coverage, get_bam_readgroups,
                                    mapped_count_by_rg, GenomeCoverages)
+
 
 # pylint: disable=R0201
 # pylint: disable=R0904
@@ -95,9 +97,20 @@ class StatsTest(unittest.TestCase):
     def test_genome_coverage_distrib(self):
         bam_fhand = open(os.path.join(TEST_DATA_DIR, 'seqs.bam'))
         cov = GenomeCoverages([bam_fhand])
-        assert repr(cov.get_mapq_counter(0)) == 'IntCounter({9: 146, 6: 1})'
-        assert repr(cov.get_mapq_counter(20)) == 'IntCounter({9: 146, 6: 1})'
-        assert repr(cov.get_mapq_counter(30)) == 'IntCounter({9: 73, 3: 73, 6: 1})'
+        res1 = 'IntCounter({9: 73})'
+        res2 = 'IntCounter({9: 73, 6: 1})'
+        assert repr(cov.get_per_sample_mapq_counters('group1+454')[0]) == res1
+        assert repr(cov.get_per_sample_mapq_counters('group2+454')[30]) == res2
+        assert cov.samples == ['group1+454', 'group2+454']
+        assert len(cov) == 8
+
+    def test_bin_draw_cov_hist(self):
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
+        binary = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
+        out_fhand = NamedTemporaryFile(suffix='.png')
+        cmd = [binary, bam_fpath, '-o', out_fhand.name]
+        print check_output(cmd)
+        raw_input(out_fhand.name)
 
     def test_flag_to_binary(self):
         assert not _flag_to_binary(0)
@@ -124,7 +137,7 @@ class StatsTest(unittest.TestCase):
                                'PL': '454', 'SM': 'group1+454'},
                               {'LB': 'group2', 'ID': 'group2+454',
                                'PL': '454', 'SM': 'group2+454'}]
-
+        readgroups = get_bam_readgroups(pysam.Samfile('/tmp/merged.sample2.bam'))
     def test_mapped_counts(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
         map_counts = mapped_count_by_rg([bam_fpath])
@@ -158,5 +171,7 @@ class GenomeCoverageTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'StatsTest.test_genome_coverage_distrib']
+    #import sys;sys.argv = ['', 'StatsTest.test_get_readgroup']
+    import sys;sys.argv = ['', 'StatsTest.test_genome_coverage_distrib',
+                            'StatsTest.test_bin_draw_cov_hist']
     unittest.main()

@@ -59,7 +59,9 @@ class TestVcfStats(unittest.TestCase):
 
     def test_only_gt_vcf(self):
         vcf_stats = VcfStats(GENERIC_VCF, min_calls_for_pop_stats=2)
-        vcf_stats.heterozigosity_for_sample('BH_T_122_C4EGEACXX_6_250311606_X4') == 0
+        sample = 'BH_T_122_C4EGEACXX_6_250311606_X4'
+        res = vcf_stats.heterozigosity_for_sample(sample)
+        self.assertAlmostEqual(res, 0.16666666)
 
 
 class AlleleCount2DTest(unittest.TestCase):
@@ -86,7 +88,7 @@ class AlleleCount2DTest(unittest.TestCase):
 
 class VCFcomparisonsTest(unittest.TestCase):
     def test_calculate_statistics(self):
-        #with freebayes
+        # with freebayes
         reader = Reader(filename=FREEBAYES_VCF_PATH)
         vcf_to_compare = VCFcomparisons(FREEBAYES_VCF_PATH)
         stats = vcf_to_compare.calculate_statistics(reader)
@@ -95,7 +97,7 @@ class VCFcomparisonsTest(unittest.TestCase):
         assert stats['different'] == 0
         assert stats['common_snps_prc'] == 100
 
-        #with varscan
+        # with varscan
         reader = Reader(filename=VARSCAN_VCF_PATH)
         vcf_to_compare = VCFcomparisons(VARSCAN_VCF_PATH, samples=['mu16'])
         stats = vcf_to_compare.calculate_statistics(reader, samples=['mu16'])
@@ -138,14 +140,15 @@ reference2\t400\tmicrosat1\tGTC\tG,GTCT\t50\tPASS\tNS=3;DP=9;AA=G\tGT:GQ:DP\t./.
         bam_fpath = join(TEST_DATA_DIR, 'seqs.bam')
         sam = pysam.AlignmentFile(bam_fpath)
         stats = calc_snv_read_pos_stats(sam, snvs)
+        print stats
         assert 'group1+454' in stats['5_read_pos_counts'].keys()
         assert '5_read_pos_boxplot' in stats
         assert '3_read_pos_boxplot' in stats
 
         fhand = NamedTemporaryFile(suffix='.png')
         draw_read_pos_stats(stats, fhand)
-        #raw_input(fhand.name)
+        # raw_input(fhand.name)
 
 if __name__ == "__main__":
-    import sys;sys.argv = ['', 'ReadPosCoord']
+    #import sys;sys.argv = ['', 'ReadPosCoord']
     unittest.main()

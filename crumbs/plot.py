@@ -195,7 +195,7 @@ def draw_histograms(counters, fhand, distrib_labels=None, num_cols=2,
                     linestyle = None
                 else:
                     linestyle = linestyles[counter_index]
-            except IndexError:
+            except IndexError as error:
                 break
             title = titles[counter_index] if titles else None
             try:
