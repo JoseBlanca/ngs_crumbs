@@ -47,7 +47,7 @@ def _setup_argparse():
                         type=float, default=DEF_AB_CODER_THRESHOLD)
 
     hlp = 'Smoothing threshold.'
-    parser.add_argument('--smooth_threshold', help=hlp, type=float)
+    parser.add_argument('-s', '--smooth_threshold', help=hlp, type=float)
 
     hlp = 'Recomb. threshold.'
     parser.add_argument('--recomb_threshold', help=hlp, type=float)
@@ -82,7 +82,7 @@ def _parse_args(parser):
     args['log'] = parsed_args.log
     args['smooth_threshold'] = parsed_args.smooth_threshold
     args['recomb_threshold'] = parsed_args.recomb_threshold
-    
+
     return args
 
 

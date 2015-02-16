@@ -51,11 +51,15 @@ def _parse_args(parser):
 
     args['out_fhand'] = parsed_args.output
 
-    samples = set()
+    samples = []
     if parsed_args.samples is not None:
-        samples.update(parsed_args.samples)
+        for sample in parsed_args.samples:
+            if sample not in samples:
+                samples.append(sample)
     if parsed_args.samples_file is not None:
-        samples.update(parse_sample_file(parsed_args.samples_file))
+        for sample in parse_sample_file(parsed_args.samples_file):
+            if sample not in samples:
+                samples.append(sample)
 
     args['samples_to_keep'] = samples if samples else None
 
@@ -67,7 +71,8 @@ def main():
     parser = _setup_argparse(description=description)
     args = _parse_args(parser)
 
-    reader = VCFReader(args['in_fhand'])
+    reader = VCFReader(args['in_fhand'], compressed=False,
+                       filename='pyvcf_bug_workaround')
 
     samples_to_keep = args['samples_to_keep']
     all_samples = reader.samples

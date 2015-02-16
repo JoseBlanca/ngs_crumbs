@@ -20,6 +20,7 @@ from itertools import imap
 from array import array
 from warnings import warn
 
+import matplotlib
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -254,12 +255,17 @@ class ABCoder(object):
         return recombs
 
     def _smooth(self, snp_idx_to_smooth, snp_gts, samples):
+        snp1 = snp_gts[snp_idx_to_smooth][0]     
+        snp1_calls = [snp1.genotype(sample) for sample in samples]
+        chrom = snp1.CHROM
+
+        # remove snps from other chromosomes
+        snp_gts = [snp_gt for snp_gt in snp_gts if snp_gt[0].CHROM == chrom]
+
         snps, gt_for_snps_in_win = zip(*snp_gts)
 
         # we need the recomb rates
         # TODO, this is already calculated in ab coding, we have to cache
-        snp1 = snps[snp_idx_to_smooth]
-        snp1_calls = [snp1.genotype(sample) for sample in samples]
         weights = []
         for snp2 in snps:
             snp2_calls = [snp2.genotype(sample) for sample in samples]
@@ -278,8 +284,9 @@ class ABCoder(object):
         indis_gts = {indi: [] for indi in samples}
         for indi in samples:
             for snp_gt in gt_for_snps_in_win:
-                snp_indi_gt =  snp_gt.get(indi, (indi, None))
-                snp_indi_gt = tuple(sorted(snp_indi_gt))
+                snp_indi_gt =  snp_gt.get(indi, None)
+                if snp_indi_gt is not None:
+                    snp_indi_gt = tuple(sorted(snp_indi_gt))
                 indis_gts[indi].append(snp_indi_gt)
 
         # Now we can do the smoothing
@@ -292,8 +299,17 @@ class ABCoder(object):
             counts = Counter()
             for weight, geno in zip(weights, indi_gt):
                 counts[geno] += weight
-            smoothed_geno, vote = counts.most_common(1)[0]
-            index = vote / sum(counts.values())
+            if None in counts:
+                del counts[None]
+            if counts:
+                smoothed_geno, vote = counts.most_common(1)[0]
+            else:
+                smoothed_geno, vote = None, 0
+            tot_index = sum(counts.values())
+            if tot_index:
+                index = vote / tot_index
+            else:
+                index = 0
             self._recombs.append(n_recombs)
             self._smoothes.append(index)
             if recomb_thres is None:
@@ -327,9 +343,7 @@ class ABCoder(object):
                 start = 0
             end = idx + half_win + 1
 
-            # remove snps in other chromosomes
-            snp_gts_in_win = [snp_gt for snp_gt in snp_ab_genotypes[start: end] if snp_gt[0].CHROM == chrom]
-
+            snp_gts_in_win = snp_ab_genotypes[start: end]
             smoothed_genos = self._smooth(idx - start, snp_gts_in_win, samples)
             smoothed_genos = OrderedDict(zip(samples, smoothed_genos))
             yield snp, smoothed_genos
@@ -356,7 +370,9 @@ class ABCoder(object):
         axes2 = fig.add_subplot(111)
         x = self._smoothes
         y = self._recombs
-        image = axes2.hist2d(x, y, bins=bins)[-1]
+        image = axes2.hist2d(x, y, bins=bins,
+                             norm=matplotlib.colors.LogNorm())[-1]
+
         axes2.tick_params(
         which='both',      # both major and minor ticks are affected
         bottom='off',      # ticks along the bottom edge are off
