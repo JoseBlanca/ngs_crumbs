@@ -109,8 +109,9 @@ class StatsTest(unittest.TestCase):
         binary = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
         out_fhand = NamedTemporaryFile(suffix='.png')
         cmd = [binary, bam_fpath, '-o', out_fhand.name]
-        print check_output(cmd)
-        raw_input(out_fhand.name)
+        res = check_output(cmd)
+        assert 'group2+454' in res
+        # raw_input(out_fhand.name)
 
     def test_flag_to_binary(self):
         assert not _flag_to_binary(0)
@@ -137,7 +138,7 @@ class StatsTest(unittest.TestCase):
                                'PL': '454', 'SM': 'group1+454'},
                               {'LB': 'group2', 'ID': 'group2+454',
                                'PL': '454', 'SM': 'group2+454'}]
-        readgroups = get_bam_readgroups(pysam.Samfile('/tmp/merged.sample2.bam'))
+
     def test_mapped_counts(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
         map_counts = mapped_count_by_rg([bam_fpath])
@@ -171,7 +172,7 @@ class GenomeCoverageTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'StatsTest.test_get_readgroup']
-    import sys;sys.argv = ['', 'StatsTest.test_genome_coverage_distrib',
-                            'StatsTest.test_bin_draw_cov_hist']
+    # import sys;sys.argv = ['', 'StatsTest.test_get_readgroup']
+    # import sys;sys.argv = ['', 'StatsTest.test_genome_coverage_distrib',
+    #                             'StatsTest.test_bin_draw_cov_hist']
     unittest.main()
