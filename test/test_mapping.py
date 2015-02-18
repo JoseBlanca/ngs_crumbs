@@ -315,5 +315,5 @@ class SortSeqsFileTest(unittest.TestCase):
 
         directory.close()
 if __name__ == '__main__':
-    import sys;sys.argv = ['', 'SortSeqsFileTest.test_add_rg_to_bam']
+    #import sys;sys.argv = ['', 'SortSeqsFileTest.test_add_rg_to_bam']
     unittest.main()
