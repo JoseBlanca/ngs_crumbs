@@ -109,7 +109,7 @@ def map_with_bwamem(index_fpath, unpaired_fpath=None, paired_fpaths=None,
         extra_params.append('-p')
 
     if readgroup is not None:
-        rg_str = '@RG\tID:{ID}\tSM:{SM}\tPL:{PL}\tLB:{LB}'.format(**readgroup)
+        rg_str = r"@RG\tID:{ID}\tSM:{SM}\tPL:{PL}\tLB:{LB}".format(**readgroup)
         extra_params.extend(['-R', rg_str])
 
     binary = get_binary_path('bwa')
@@ -121,7 +121,7 @@ def map_with_bwamem(index_fpath, unpaired_fpath=None, paired_fpaths=None,
         stderr = NamedTemporaryFile(suffix='.stderr')
     else:
         stderr = open(log_fpath, 'w')
-    #raw_input(' '.join(cmd))
+    # raw_input(' '.join(cmd))
     bwa = popen(cmd, stderr=stderr, stdout=PIPE)
     return bwa
 
