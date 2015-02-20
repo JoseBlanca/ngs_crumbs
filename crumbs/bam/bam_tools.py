@@ -18,7 +18,9 @@ from subprocess import check_call, CalledProcessError
 import shutil
 from tempfile import NamedTemporaryFile
 import sys
+from array import array
 import pysam
+
 
 from crumbs.bam.flag import create_flag
 from crumbs.settings import get_setting
@@ -200,3 +202,28 @@ def merge_sams(in_fpaths, out_fpath):
     except CalledProcessError:
         sys.stderr.write(open(stderr.name).read())
         sys.stdout.write(open(stdout.name).read())
+
+BAD_QUAL = 10
+
+
+def downgrade_read_edges(in_fpath, out_fpath, size,
+                         bad_qual_value=BAD_QUAL):
+    in_sam = pysam.AlignmentFile(in_fpath)
+    out_sam = pysam.AlignmentFile(out_fpath, 'wb', template=in_sam)
+    for aligned_read in in_sam:
+        _downgrade_edge_qualities(aligned_read, size, 
+                                  bad_qual_value=bad_qual_value)
+        out_sam.write(aligned_read)
+
+
+def _downgrade_edge_qualities(aligned_read, size, bad_qual_value):
+    rigth_limit = aligned_read.qstart + size
+    left_limit = aligned_read.qend - size
+    qlength = aligned_read.query_length
+    quals = list(aligned_read.query_qualities)
+
+    new_quals = [bad_qual_value] * rigth_limit
+    new_quals += quals[rigth_limit:left_limit]
+
+    new_quals += [bad_qual_value] * (qlength - left_limit)
+    aligned_read.query_qualities = array('B', new_quals)

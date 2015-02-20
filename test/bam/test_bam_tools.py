@@ -19,12 +19,13 @@ import shutil
 from subprocess import check_output, check_call
 from tempfile import NamedTemporaryFile
 
-import pysam
+from pysam import AlignmentFile
 
 from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.utils.bin_utils import BAM_BIN_DIR
 from crumbs.bam.bam_tools import (filter_bam, calmd_bam, realign_bam,
-                                  index_bam, merge_sams)
+                                  index_bam, merge_sams,
+                                  _downgrade_edge_qualities, BAD_QUAL)
 
 # pylint: disable=C0111
 
@@ -72,7 +73,7 @@ class ToolsTest(unittest.TestCase):
         fhand.close()
         try:
             merge_sams([bam_fpath, bam_fpath], out_fpath=out_fpath)
-            samfile = pysam.Samfile(out_fpath)
+            samfile = AlignmentFile(out_fpath)
             assert len(list(samfile)) == 2
             assert os.stat(bam_fpath) != os.stat(out_fpath)
         finally:
@@ -117,12 +118,12 @@ class CalmdTest(unittest.TestCase):
     def test_calmd_bam(self):
         ref_fpath = os.path.join(TEST_DATA_DIR, 'CUUC00007_TC01.fasta')
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')
-        orig_qual = pysam.Samfile(bam_fpath).next().qual
+        orig_qual = AlignmentFile(bam_fpath).next().qual
         try:
             out_bam = NamedTemporaryFile()
             calmd_bam(bam_fpath, ref_fpath, out_bam.name)
 
-            samfile = pysam.Samfile(out_bam.name)
+            samfile = AlignmentFile(out_bam.name)
             calmd_qual = samfile.next().qual
             assert orig_qual != calmd_qual
             assert calmd_qual == 'HHHHHHBHGGH!!!!!!!!!!!!!!!!!!!!!!!!!!!'
@@ -155,6 +156,45 @@ class CalmdTest(unittest.TestCase):
                     ref_fpath])
         assert open(calmd_fhand.name).read()
 
+
+class DowngradeQuality(unittest.TestCase):
+
+    def test_downngrade_read_edges(self):
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')
+        sam = AlignmentFile(bam_fpath)
+
+        aligned_read = sam.next()
+        _downgrade_edge_qualities(aligned_read, size=4,
+                                  bad_qual_value=BAD_QUAL)
+        res = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 39,
+               39, 39, 38, 38, 36, 33, 36, 38, 36, 38, 38, 38, 38, 39, 39, 38,
+               38, 38, 10, 10, 10, 10]
+        assert list(aligned_read.query_qualities) == res
+
+        # rev seqs (sam specification puts all the alignment query
+        # forward(cigar, seq, qual, ...). Reverse is inly noted in the flag
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'sample_rev.bam')
+        sam = AlignmentFile(bam_fpath)
+
+        aligned_read = sam.next()
+        aligned_read = sam.next()
+        aligned_read = sam.next()
+        _downgrade_edge_qualities(aligned_read, size=4,
+                                  bad_qual_value=BAD_QUAL)
+        res = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+        assert list(aligned_read.query_qualities[:14]) == res
+
+    def test_downgrade_read_edges_binary(self):
+        binary = os.path.join(BAM_BIN_DIR, 'downgrade_bam_edge_qual')
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'sample_rev.bam')
+        with NamedTemporaryFile() as out_fhand:
+            cmd = [binary, '-o', out_fhand.name, bam_fpath]
+            check_call(cmd)
+            sam = AlignmentFile(out_fhand.name)
+            res = [10, 10]
+            assert list(sam.next().query_qualities[:2]) == res
+
+
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'CalmdTest']
+    # import sys; sys.argv = ['', 'DowngradeQuality']
     unittest.main()
