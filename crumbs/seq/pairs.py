@@ -17,8 +17,6 @@
 import re
 from itertools import izip_longest, chain
 
-from toolz import first
-
 from crumbs.exceptions import (PairDirectionError, InterleaveError,
                                ItemsNotSortedError)
 from crumbs.seq.seqio import write_seqs
@@ -27,6 +25,7 @@ from crumbs.utils.tags import FWD, REV
 from crumbs.utils.file_utils import flush_fhand
 from crumbs.iterutils import sorted_items, group_in_packets_fill_last
 from crumbs.collectionz import KeyedSet
+from crumbs.utils.optional_modules import first
 
 
 def _parse_pair_direction_and_name(seq):

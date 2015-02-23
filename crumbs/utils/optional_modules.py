@@ -120,10 +120,18 @@ except ImportError:
 
 try:
     from pysam import Samfile
-    from pysam import AlignmentFile
+    from pysam import view, index, faidx, calmd
 except ImportError:
     Samfile = create_fake_funct(MSG + 'pysam')
-    AlignmentFile = create_fake_funct(MSG + 'pysam')
+    view = create_fake_funct(MSG + 'pysam')
+    index = create_fake_funct(MSG + 'pysam')
+    faidx = create_fake_funct(MSG + 'pysam')
+    calmd = create_fake_funct(MSG + 'pysam')
+
+try:
+    from pysam import AlignmentFile
+except ImportError:
+    AlignmentFile = create_fake_funct(MSG + 'pysam version >0.8')
 
 try:
     from configobj import ConfigObj
@@ -140,9 +148,13 @@ except ImportError:
 
 # numpy
 try:
-    from numpy import linspace
+    from numpy import linspace, histogram, zeros, median, sum
 except ImportError:
     linspace = create_fake_funct(MSG + 'numpy')
+    histogram = create_fake_funct(MSG + 'numpy')
+    zeros = create_fake_funct(MSG + 'numpy')
+    median = create_fake_funct(MSG + 'numpy')
+    sum = create_fake_funct(MSG + 'numpy')
 
 # matplotlib
 try:

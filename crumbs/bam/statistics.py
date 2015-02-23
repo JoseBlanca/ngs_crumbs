@@ -20,21 +20,19 @@ from subprocess import Popen, PIPE
 from operator import itemgetter
 from itertools import izip
 from array import array
-from numpy import histogram, zeros, median, sum as np_sum
+from collections import Counter
 
-import pysam
-try:
-    from pysam.csamtools import Samfile
-except ImportError:
-    from pysam import Samfile
+from crumbs.utils.optional_modules import (histogram, zeros, median,
+                                           sum as np_sum)
 
+from crumbs.utils.optional_modules import AlignmentFile
 from crumbs.statistics import (draw_histogram_ascii, IntCounter, LABELS,
                                BestItemsKeeper)
 
 from crumbs.settings import get_setting
 from crumbs.bam.flag import SAM_FLAG_BINARIES, SAM_FLAGS
 from crumbs.utils.bin_utils import get_binary_path
-from collections import Counter
+
 
 # pylint: disable=C0111
 
@@ -400,7 +398,7 @@ def mapped_count_by_rg(bam_fpaths, mapqx=None):
     do_mapqx = True if mapqx is not None else False
     counter_by_rg = {}
     for bam_fpath in bam_fpaths:
-        bam = pysam.Samfile(bam_fpath, 'rb')
+        bam = AlignmentFile(bam_fpath, 'rb')
         readgroups = get_bam_readgroups(bam)
         if readgroups is None:
             bam_basename = os.path.splitext(os.path.basename(bam_fpath))[0]

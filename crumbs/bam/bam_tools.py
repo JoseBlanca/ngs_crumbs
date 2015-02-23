@@ -19,12 +19,12 @@ import shutil
 from tempfile import NamedTemporaryFile
 import sys
 from array import array
-import pysam
-
 
 from crumbs.bam.flag import create_flag
 from crumbs.settings import get_setting
 from crumbs.utils.bin_utils import get_num_threads
+from crumbs.utils.optional_modules import (AlignmentFile, view, index, faidx,
+                                           calmd)
 
 # pylint: disable=C0111
 
@@ -57,7 +57,7 @@ def filter_bam(in_fpath, out_fpath, min_mapq=0, required_flag_tags=None,
         regions = ['{0}:{1}-{2}'.format(*s) for s in regions.segments]
         cmd.extend(regions)
 
-    pysam.view(*cmd)
+    view(*cmd)
 
 
 def sort_bam(in_bam_fpath, out_bam_fpath=None):
@@ -85,7 +85,7 @@ def sort_bam(in_bam_fpath, out_bam_fpath=None):
 
 def index_bam(bam_fpath):
     'It indexes a bam file'
-    pysam.index(bam_fpath)
+    index(bam_fpath)
 
 
 def _create_sam_reference_index(fpath):
@@ -93,7 +93,7 @@ def _create_sam_reference_index(fpath):
     index_fpath = fpath + '.fai'
     if os.path.exists(index_fpath):
         return
-    pysam.faidx(fpath)
+    faidx(fpath)
 
 
 def _create_picard_dict(fpath):
@@ -181,7 +181,7 @@ def calmd_bam(in_bam_fpath, reference_fpath, out_bam_fpath=None):
 
 def _calmd_bam(bam_fpath, reference_fpath, out_bam_fpath):
     out_fhand = open(out_bam_fpath, 'wb')
-    for line in pysam.calmd(*["-bAr", bam_fpath, reference_fpath]):
+    for line in calmd(*["-bAr", bam_fpath, reference_fpath]):
         out_fhand.write(line)
     # out_fhand.write(pysam.calmd(*["-bAr", bam_fpath, reference_fpath]))
     out_fhand.flush()
@@ -208,8 +208,8 @@ BAD_QUAL = 10
 
 def downgrade_read_edges(in_fpath, out_fpath, size,
                          bad_qual_value=BAD_QUAL):
-    in_sam = pysam.AlignmentFile(in_fpath)
-    out_sam = pysam.AlignmentFile(out_fpath, 'wb', template=in_sam)
+    in_sam = AlignmentFile(in_fpath)
+    out_sam = AlignmentFile(out_fpath, 'wb', template=in_sam)
     for aligned_read in in_sam:
         _downgrade_edge_qualities(aligned_read, size,
                                   bad_qual_value=bad_qual_value)

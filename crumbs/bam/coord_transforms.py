@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
-import pysam
 from collections import Counter, namedtuple
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def pos_counter_by_pos(bam_fpath, positions):
-    alignmentfile = pysam.AlignmentFile(bam_fpath)
+    alignmentfile = AlignmentFile(bam_fpath)
     ref_name_index = {}
     for pileup_col in alignmentfile.pileup():
         ref_id = pileup_col.reference_id

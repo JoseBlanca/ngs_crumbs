@@ -19,12 +19,6 @@
 from __future__ import division
 from tempfile import NamedTemporaryFile
 
-try:
-    from pysam import Samfile
-except ImportError:
-    # This is an optional requirement
-    pass
-
 from crumbs.utils.tags import (SEQS_PASSED, SEQS_FILTERED_OUT, SEQITEM,
                                SEQRECORD)
 from crumbs.seq.utils.seq_utils import uppercase_length, get_uppercase_segments
@@ -36,6 +30,7 @@ from crumbs.settings import get_setting
 from crumbs.mapping import map_with_bowtie2, map_process_to_bam
 from crumbs.seq.seqio import write_seqs
 from crumbs.seq.pairs import group_pairs, group_pairs_by_name
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def seq_to_filterpackets(seq_packets, group_paired_reads=False):
@@ -175,15 +170,16 @@ class FilterById(_BaseFilter):
             seq_ids = set(seq_ids)
         self.seq_ids = seq_ids
         super(FilterById, self).__init__(failed_drags_pair=failed_drags_pair,
-                                              reverse=reverse)
+                                         reverse=reverse)
 
     def _do_check(self, seq):
         return True if get_name(seq) in self.seq_ids else False
 
 
 def _get_mapped_reads(bam_fpath, min_mapq=0):
-    bam = Samfile(bam_fpath)
-    return [read.qname for read in bam if not read.is_unmapped and (not min_mapq or read.mapq > min_mapq)]
+    bam = AlignmentFile(bam_fpath)
+    return [read.qname for read in bam if not read.is_unmapped and
+            (not min_mapq or read.mapq > min_mapq)]
 
 
 class FilterByBam(FilterById):
@@ -224,7 +220,7 @@ class FilterByQuality(_BaseFilter):
         if self.ignore_masked:
             str_seq = str(seq_object.seq)
             seg_quals = [quals[segment[0]: segment[1] + 1]
-                            for segment in get_uppercase_segments(str_seq)]
+                         for segment in get_uppercase_segments(str_seq)]
             qual = sum(sum(q) * len(q) for q in seg_quals) / len(quals)
         else:
             qual = sum(quals) / len(quals)
@@ -251,9 +247,10 @@ class FilterBlastShort(_BaseFilter):
                    {'kind': 'min_length', 'min_num_residues': 13,
                     'length_in_query': False}]
         self._matcher = BlasterForFewSubjects(db_fhand.name, self.oligos,
-                                             program='blastn', filters=filters,
-                                             params=params,
-                                             elongate_for_global=False)
+                                              program='blastn',
+                                              filters=filters,
+                                              params=params,
+                                              elongate_for_global=False)
 
     def _do_check(self, seq):
         segments = self._matcher.get_matched_segments_for_read(get_name(seq))
