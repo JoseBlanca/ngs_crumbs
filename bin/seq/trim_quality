@@ -81,11 +81,11 @@ def run():
     trim_or_mask = TrimOrMask(mask=args['mask'])
 
     trim_packets, workers = process_seq_packets(trim_packets,
-                                               [trim_quality, trim_or_mask],
-                                               processes=args['processes'])
+                                                [trim_quality, trim_or_mask],
+                                                processes=args['processes'])
 
     write_trim_packets(out_fhand, orphan_fhand, trim_packets,
-                         args['out_format'], workers=workers)
+                       args['out_format'], workers=workers)
 
     flush_fhand(out_fhand)
     if orphan_fhand is not None:
