@@ -20,11 +20,10 @@ import argparse
 import json
 from itertools import imap
 
-from configobj import ConfigObj
 
-from vcf.parser import _Filter, _Info
 from crumbs.vcf.snv import VCFReader, VCFWriter
 from crumbs.vcf.annotation import mark_snv_as_filter_passed
+from crumbs.utils.optional_modules import ConfigObj, _Filter, _Info
 
 
 def _setup_argparse():

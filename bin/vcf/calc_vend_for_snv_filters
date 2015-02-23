@@ -19,8 +19,7 @@
 import argparse
 import sys
 import itertools
-
-from vcf import Reader
+from crumbs.utils.optional_modules import Reader
 
 
 def _setup_argparse():

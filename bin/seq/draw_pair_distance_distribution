@@ -18,6 +18,7 @@
 
 import sys
 import argparse
+
 from crumbs.utils.bin_utils import main
 from crumbs.settings import get_setting
 from crumbs.seq.mate_chimeras import calculate_distance_distribution

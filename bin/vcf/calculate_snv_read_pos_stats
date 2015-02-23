@@ -17,10 +17,9 @@
 
 import argparse
 
-import pysam
-
 from crumbs.vcf.snv import VCFReader
 from crumbs.vcf.statistics import calc_snv_read_pos_stats, draw_read_pos_stats
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def _setup_argparse():
@@ -57,7 +56,7 @@ def main():
     args = _parse_args(parser)
 
     snvs = VCFReader(args['vcf_fhand']).parse_snvs()
-    bam = pysam.AlignmentFile(args['bam_fpath'])
+    bam = AlignmentFile(args['bam_fpath'])
 
     stats = calc_snv_read_pos_stats(bam, snvs, max_snps=args['max_snvs'],
                                     max_pos=args['max_pos'])

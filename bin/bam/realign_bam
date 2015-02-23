@@ -30,12 +30,12 @@ def _setup_argparse():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('input', help='BAM or SAM file to process',
                         type=argparse.FileType('rt'))
+    msgout = 'Output file. Use it if you want to mantain input file'
     parser.add_argument('-o', '--outfile', dest='outfile',
-                help='Output file. Use it if you want to mantain input file',
-                type=argparse.FileType('wt'))
+                        help=msgout, type=argparse.FileType('wt'))
+    msgref = 'reference file used to align the bam'
     parser.add_argument('-f', '--reference', dest='reference', required=True,
-                help='reference file used to align the bam',
-                type=argparse.FileType('rt'))
+                        help=msgref, type=argparse.FileType('rt'))
 #     parser.add_argument('-t', '--num_threads', dest='threads',
 #                 help='Num of threads to use', default=1)
 
@@ -55,7 +55,7 @@ def _parse_args(parser):
     in_fhand = parsed_args.input
     out_fhand = getattr(parsed_args, 'outfile')
     skip_index = parsed_args.skip_index
-    #threads = parsed_args.threads
+    # threads = parsed_args.threads
     reference_fhand = parsed_args.reference
 
     args = {'out_fhand': out_fhand, 'in_fhand': in_fhand,

@@ -120,5 +120,39 @@ except ImportError:
 
 try:
     from pysam import Samfile
+    from pysam import AlignmentFile
 except ImportError:
     Samfile = create_fake_funct(MSG + 'pysam')
+    AlignmentFile = create_fake_funct(MSG + 'pysam')
+
+try:
+    from configobj import ConfigObj
+except ImportError:
+    ConfigObj = create_fake_funct(MSG + 'configobj')
+
+try:
+    from vcf.parser import _Filter, _Info
+    from vcf import Reader
+except ImportError:
+    _Filter = create_fake_funct(MSG + 'pyvcf')
+    _Info = create_fake_funct(MSG + 'pyvcf')
+    Reader = create_fake_funct(MSG + 'pyvcf')
+
+# numpy
+try:
+    from numpy import linspace
+except ImportError:
+    linspace = create_fake_funct(MSG + 'numpy')
+
+# matplotlib
+try:
+    from matplotlib.mlab import griddata
+    from matplotlib import cm
+    from matplotlib.colorbar import make_axes, Colorbar
+    from matplotlib.ticker import ScalarFormatter
+except ImportError:
+    griddata = create_fake_funct(MSG + 'matplotlib')
+    cm = create_fake_funct(MSG + 'matplotlib')
+    make_axes = create_fake_funct(MSG + 'matplotlib')
+    Colorbar = create_fake_funct(MSG + 'matplotlib')
+    ScalarFormatter = create_fake_funct(MSG + 'matplotlib')

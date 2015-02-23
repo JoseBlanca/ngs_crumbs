@@ -18,11 +18,10 @@
 import argparse
 import sys
 
-import pysam
-
 from crumbs.utils.bin_utils import main, build_version_msg
 from crumbs.bam.statistics import ReferenceStats
 from crumbs.settings import get_setting
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def _setup_argparse():
@@ -69,7 +68,7 @@ def run():
     in_fhands = args['in_fhands']
     out_fhand = args['out_fhand']
 
-    bams = [pysam.Samfile(f.name) for f in in_fhands]
+    bams = [AlignmentFile(f.name) for f in in_fhands]
     stats = ReferenceStats(bams, bins=args['bins'],
                            n_most_abundant_refs=args['n_abundant_refs'])
     out_fhand.write(stats.write(max_rpkm=args['max_rpkm'],))
