@@ -211,7 +211,7 @@ def downgrade_read_edges(in_fpath, out_fpath, size,
     in_sam = pysam.AlignmentFile(in_fpath)
     out_sam = pysam.AlignmentFile(out_fpath, 'wb', template=in_sam)
     for aligned_read in in_sam:
-        _downgrade_edge_qualities(aligned_read, size, 
+        _downgrade_edge_qualities(aligned_read, size,
                                   bad_qual_value=bad_qual_value)
         out_sam.write(aligned_read)
 
