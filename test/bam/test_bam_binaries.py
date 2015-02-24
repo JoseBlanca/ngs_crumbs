@@ -28,7 +28,7 @@ class BinTests(unittest.TestCase):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
         fhand = NamedTemporaryFile(suffix='.png')
         out = check_output([bin_, bam_fpath, '-o', fhand.name])
-        assert '147' in out
+        assert 'group1+454' in out
 
     def test_mapq_hist(self):
         bin_ = os.path.join(BAM_BIN_DIR, 'draw_mapq_hist')

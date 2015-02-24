@@ -317,7 +317,7 @@ def get_rgs_from_samfiles(bams):
 
 class GenomeCoverages(object):
     def __init__(self, bam_fhands, mapqs=MAPQS_TO_CALCULATE):
-        self._bams = [Samfile(bam_fhand.name) for bam_fhand in bam_fhands]
+        self._bams = [AlignmentFile(bam_fhand.name) for bam_fhand in bam_fhands]
         self.mapqs_to_calculate = mapqs
         self.rgs = get_rgs_from_samfiles(self._bams)
         self._counters = {}

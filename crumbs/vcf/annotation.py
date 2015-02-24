@@ -20,13 +20,14 @@ from os.path import join, abspath
 from collections import Counter
 from itertools import count
 
-from Bio import SeqIO
-from Bio.Restriction.Restriction import CommOnly, RestrictionBatch, Analysis
-
 from crumbs.vcf.prot_change import (get_amino_change, IsIndelError,
                                     BetweenSegments, OutsideAlignment)
 from crumbs.vcf.snv import VCFReader
 from crumbs.iterutils import RandomAccessIterator
+from crumbs.utils.optional_modules import (parse_into_seqrecs, seq_index,
+                                           CommOnly, RestrictionBatch,
+                                           Analysis)
+
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
 # Missing docstring
@@ -179,7 +180,7 @@ class CloseToSnv(BaseAnnotator):
 # TODO: use fai if it is available
 def _get_lengths(fhand):
     lengths = {}
-    for seq in SeqIO.parse(fhand, 'fasta'):
+    for seq in parse_into_seqrecs(fhand, 'fasta'):
         lengths[seq.id] = len(seq)
     return lengths
 
@@ -350,7 +351,7 @@ class CapEnzyme(BaseAnnotator):
 
     def __init__(self, all_enzymes, ref_fpath):
         self.all_enzymes = all_enzymes
-        self.ref_index = SeqIO.index(ref_fpath, 'fasta')
+        self.ref_index = seq_index(ref_fpath, 'fasta')
         self.conf = {'all_enzymes': all_enzymes}
         self._last_chrom = None
 
@@ -749,8 +750,8 @@ class AminoChangeAnnotator(BaseAnnotator):
 
     def __init__(self, ref_fpath, orf_seq_fpath):
         self.orf_suffix = '_orf_seq'
-        self.ref_index = SeqIO.index(ref_fpath, 'fasta')
-        self.orf_seq_index = SeqIO.index(orf_seq_fpath, 'fasta')
+        self.ref_index = seq_index(ref_fpath, 'fasta')
+        self.orf_seq_index = seq_index(orf_seq_fpath, 'fasta')
 
         self.conf = {}
 
@@ -824,8 +825,8 @@ class AminoSeverityChangeAnnotator(BaseAnnotator):
 
     def __init__(self, ref_fpath, orf_seq_fpath):
         self.orf_suffix = '_orf_seq'
-        self.ref_index = SeqIO.index(ref_fpath, 'fasta')
-        self.orf_seq_index = SeqIO.index(orf_seq_fpath, 'fasta')
+        self.ref_index = seq_index(ref_fpath, 'fasta')
+        self.orf_seq_index = seq_index(orf_seq_fpath, 'fasta')
         blossum_path = join(DATA_DIR, 'blossum90.csv')
         self.blosum = _parse_blossum_matrix(blossum_path)
 

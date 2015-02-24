@@ -15,14 +15,8 @@
 
 from os.path import splitext
 
-try:
-    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-    from matplotlib.figure import Figure
-    from matplotlib import colors, cm
-except ImportError:
-    pass
-
 from crumbs.exceptions import OptionalRequirementError
+from crumbs.utils.optional_modules import FigureCanvas, Figure, cm, Normalize
 
 
 FIGURE_SIZE = (15.0, 11.0)  # inche
@@ -285,7 +279,7 @@ def draw_scatter(groups, fhand, plot_lines=False, **kwargs):
         if 'color_intensity' in group:
             # value is a list with color intensities
             sct_kwargs['c'] = group['color_intensity']
-            sct_kwargs['norm'] = colors.Normalize()
+            sct_kwargs['norm'] = Normalize()
             sct_kwargs['cmap'] = cm.get_cmap(COLORMAPS[index])
             sct_kwargs['s'] = 50
             sct_kwargs['alpha'] = 0.5

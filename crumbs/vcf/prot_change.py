@@ -17,8 +17,7 @@ import subprocess
 import os
 from tempfile import NamedTemporaryFile
 
-from Bio import SeqIO
-from Bio.Seq import Seq
+from crumbs.utils.optional_modules import Seq, write_seqrecs
 
 
 class IsIndelError(Exception):
@@ -269,8 +268,8 @@ def _do_water_alignment(seq1, seq2,  out_fhand, gap_open=10.0, gap_extend=0.5,
     seq1_fhand = NamedTemporaryFile()
     seq2_fhand = NamedTemporaryFile()
 
-    SeqIO.write(seq1, seq1_fhand, 'fasta')
-    SeqIO.write(seq2, seq2_fhand, 'fasta')
+    write_seqrecs(seq1, seq1_fhand, 'fasta')
+    write_seqrecs(seq2, seq2_fhand, 'fasta')
     seq1_fhand.flush()
     seq2_fhand.flush()
     cmd = ['water', '-asequence', seq1_fhand.name, '-bsequence',

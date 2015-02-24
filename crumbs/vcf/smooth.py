@@ -16,13 +16,11 @@
 from collections import Counter, OrderedDict
 from array import array
 
-from matplotlib.figure import Figure
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from crumbs.vcf.ab_coding import DEF_AB_CODING_WIN
 from crumbs.iterutils import RandomAccessIterator
 from crumbs.vcf.ld import _count_biallelic_haplotypes
 from crumbs.vcf.filters import _print_figure
+from crumbs.utils.optional_modules import Figure, make_axes_locatable
 
 # Missing docstring
 # pylint: disable=C0111

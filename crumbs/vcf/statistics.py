@@ -16,8 +16,6 @@
 from __future__ import division
 from operator import itemgetter
 
-from vcf import Reader
-
 from crumbs.seq.seq import get_name, get_length
 from crumbs.seq.seqio import read_seqs
 from crumbs.statistics import IntCounter, IntBoxplot
@@ -25,6 +23,7 @@ from crumbs.plot import get_fig_and_canvas, draw_int_boxplot
 from crumbs.vcf.snv import (VARSCAN, GATK, FREEBAYES, HOM_REF, HET, HOM_ALT,
                             HOM, DEF_MIN_CALLS_FOR_POP_STATS, VCFReader,
                             pyvcfReader)
+from crumbs.utils.optional_modules import Reader
 
 # TODO: This must be optional
 from crumbs.bam.coord_transforms import ReadRefCoord

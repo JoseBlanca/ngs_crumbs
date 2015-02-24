@@ -19,8 +19,6 @@ from subprocess import PIPE
 from tempfile import NamedTemporaryFile
 import tempfile
 
-import pysam
-
 from crumbs.utils.bin_utils import (check_process_finishes, get_binary_path,
                                     popen, get_num_threads)
 from crumbs.settings import get_setting
@@ -31,6 +29,7 @@ from crumbs.seq.seq import SeqItem, SeqWrapper, get_str_seq, get_name
 from crumbs.utils.tags import SEQITEM
 from crumbs.iterutils import sorted_items
 from crumbs.seq.seqio import read_seqs
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def _bwa_index_exists(index_path):
@@ -341,7 +340,7 @@ def sort_by_position_in_ref(in_fhand, index_fpath, directory=None,
                                        extra_params=extra_params)
     out_fhand = NamedTemporaryFile()
     map_process_to_sortedbam(bowtie2_process, out_fhand.name, tempdir=tempdir)
-    samfile = pysam.Samfile(out_fhand.name)
+    samfile = AlignmentFile(out_fhand.name)
     for aligned_read in samfile:
         yield alignedread_to_seqitem(aligned_read)
 

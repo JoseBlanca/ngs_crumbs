@@ -14,10 +14,10 @@
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
 import random
+import sqlite3
 from itertools import izip_longest, islice, tee, izip
 import cPickle as pickle
 from tempfile import NamedTemporaryFile
-import sqlite3
 from collections import namedtuple
 
 from crumbs.utils.optional_modules import merge_sorted
