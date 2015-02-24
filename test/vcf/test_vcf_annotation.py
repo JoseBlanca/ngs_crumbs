@@ -27,8 +27,10 @@ from crumbs.vcf.annotation import (CloseToSnv, HighVariableRegion,
                                    AminoChangeAnnotator, IsVariableAnnotator,
                                    IsVariableDepthAnnotator,
                                    AminoSeverityChangeAnnotator,
-                                   HeterozigoteInSamples)
+                                   HeterozigoteInSamples,
+                                   LowComplexityRegionAnnotator)
 from crumbs.vcf.snv import VCFReader
+from crumbs.utils.file_utils import TemporaryDir
 
 # Method could be a function
 # pylint: disable=R0201
@@ -563,6 +565,22 @@ SEUC00016_TC01\t112\trs6054257\tT\tC\t29\tPASS\tNS=3;DP=14;AF=0.5;DB;H2\tGT:GQ:D
         assert snvc.infos['IV0'] == 'None'
 
 
+class TestComplexityAnnotator(unittest.TestCase):
+    def test_complexity_filter(self):
+        records = list(VCFReader(open(VCF_PATH)).parse_snvs())
+        low_complexity = LowComplexityRegionAnnotator(ref_fpath=REF_PATH)
+
+        snp = records[0].copy()
+        low_complexity(snp)
+        assert low_complexity.name not in snp.filters
+
+        snp1 = records[1]
+        low_complexity(snp1)
+        assert low_complexity.name not in snp1.filters
+        fhand = NamedTemporaryFile(suffix='.png')
+        low_complexity.draw_hist(fhand)
+
+
 class TestInfoMappers(unittest.TestCase):
 
     def test_hetegorigot_percent(self):
@@ -642,15 +660,21 @@ class BinaryTest(unittest.TestCase):
     [[IsVariableDepthAnnotator]]
         filter_id = 1
         samples = ['pep']
+[6]
+    [[LowComplexityRegionAnnotator]]
+        ref_fpath = '{sample_fasta}'
 '''
         config = config.format(sample_fasta=REF_FREEBAYES)
 
         config_fhand = NamedTemporaryFile(suffix='.config')
         config_fhand.write(config)
         config_fhand.flush()
-        cmd = [binary, FREEBAYES3_VCF_PATH, '-f', config_fhand.name]
+        tmp_dir = TemporaryDir()
+        cmd = [binary, FREEBAYES3_VCF_PATH, '-f', config_fhand.name,
+               '-p', tmp_dir.name]
         #raw_input(' '.join(cmd))
         result = check_output(cmd)
+        tmp_dir.close()
         #print result
         assert 'cs60_0.70\t' in result
         assert 'CAP=MmeI' in result
@@ -658,5 +682,5 @@ class BinaryTest(unittest.TestCase):
         assert '\tPASS\t' in result
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'AnnotatorsTest.test_high_variable_region_filter']
+    # import sys;sys.argv = ['', 'BinaryTest']
     unittest.main()

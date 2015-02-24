@@ -19,6 +19,8 @@ import json
 from os.path import join, abspath
 from collections import Counter
 from itertools import count
+import random
+from array import array
 
 from crumbs.vcf.prot_change import (get_amino_change, IsIndelError,
                                     BetweenSegments, OutsideAlignment)
@@ -26,8 +28,12 @@ from crumbs.vcf.snv import VCFReader
 from crumbs.iterutils import RandomAccessIterator
 from crumbs.utils.optional_modules import (parse_into_seqrecs, seq_index,
                                            CommOnly, RestrictionBatch,
-                                           Analysis)
-
+                                           Analysis, Figure)
+from crumbs.settings import get_setting
+from crumbs.vcf.filters import _print_figure
+from crumbs.statistics import calculate_dust_score
+from crumbs.utils.tags import SEQRECORD
+from crumbs.seq.seq import SeqWrapper
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
 # Missing docstring
@@ -877,6 +883,93 @@ class AminoSeverityChangeAnnotator(BaseAnnotator):
     @property
     def is_filter(self):
         return False
+
+    @property
+    def item_wise(self):
+        return True
+
+
+DEFATULT_DUST_THRESHOLD = get_setting('DEFATULT_DUST_THRESHOLD')
+DEF_SNP_DUST_WINDOW = get_setting('DEF_SNP_DUST_WINDOW')
+
+
+class LowComplexityRegionAnnotator(BaseAnnotator):
+    def __init__(self, ref_fpath, dust_threshold=DEFATULT_DUST_THRESHOLD,
+                 window=DEF_SNP_DUST_WINDOW):
+        self.threshold = dust_threshold
+        self.window = window
+        self.ref_index = seq_index(ref_fpath, 'fasta')
+        self._last_chrom = None
+        self._scores = array('f')
+
+    def __call__(self, snv):
+        self._clean_filter(snv)
+        # we have to make all the posible conbinations
+        chrom = snv.chrom
+        last_chrom = self._last_chrom
+        if last_chrom is not None and chrom == self._last_chrom[0]:
+            ref = last_chrom[1]
+        else:
+            ref = self.ref_index[snv.chrom]
+            self._last_chrom = chrom, ref
+
+        start = snv.pos
+        end = snv.end
+        snv_len = end - start
+        window = self.window
+        if snv_len >= window:
+            start = start
+            end = end
+        else:
+            win_out_snv_len = window - snv_len
+            to_add_left = win_out_snv_len // 2
+            to_add_right = to_add_left
+            if win_out_snv_len % 2:
+                # if random.choice([True, False]):
+                if True:
+                    to_add_left += 1
+                else:
+                    to_add_right += 1
+            start -= to_add_left
+            end += to_add_right
+        if start < 0:
+            start = 0
+            end += abs(start)
+        if end > len(ref):
+            start -= end - len(ref)
+            end = len(ref)
+
+        snv_win_seq = SeqWrapper(SEQRECORD, ref[start:end], None)
+        score = calculate_dust_score(snv_win_seq)
+        if score > self.threshold:
+            snv.add_filter(self.name)
+
+        self._scores.append(score)
+
+        if self.return_modified_snv:
+            return snv
+
+    @property
+    def name(self):
+        return 'lcr'
+
+    def draw_hist(self, fhand):
+        fig = Figure()
+        axes = fig.add_subplot(111)
+        axes.hist(self._scores, fill=True, log=True, bins=20,
+                  rwidth=1)
+        axes.axvline(x=self.threshold)
+        axes.set_xlabel('% complexity score')
+        axes.set_ylabel('num. SNPs')
+        _print_figure(axes, fig, fhand, plot_legend=False)
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def description(self):
+        return "SNV is located in a low complexity region"
 
     @property
     def item_wise(self):

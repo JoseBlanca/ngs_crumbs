@@ -16,6 +16,7 @@
 # along with seq_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os
 import argparse
 import json
 from itertools import imap
@@ -34,6 +35,8 @@ def _setup_argparse():
     parser.add_argument('input', help=in_help, type=argparse.FileType('rt'))
     parser.add_argument('-o', '--output',
                         help='output vcf file', type=argparse.FileType('wt'))
+    parser.add_argument('-p', '--plots_dir', default='annotate_snvs_plots',
+                        help='plot output dir', type=str)
     parser.add_argument('-f', '--filter_conf', required=True,
                         type=argparse.FileType('rt'),
                         help='File with the filter configuration')
@@ -51,6 +54,9 @@ def _parse_args(parser):
     else:
         args['out_fhand'] = sys.stdout
     args['filter_fhand'] = parsed_args.filter_conf
+    args['plots_dir'] = parsed_args.plots_dir
+    if not os.path.exists(args['plots_dir']):
+        os.mkdir(args['plots_dir'])
     return args
 
 
@@ -140,5 +146,14 @@ def main():
 
     writer.write_snvs(snvs)
     writer.close()
+
+    # write histograms of some filters
+    for snv_filter in item_wise_filters + bulk_filters:
+        if 'draw_hist' in dir(snv_filter):
+            fhand = open(os.path.join(args['plots_dir'],
+                                      snv_filter.name + '.png'), 'w')
+            snv_filter.draw_hist(fhand)
+
+
 if __name__ == '__main__':
     main()

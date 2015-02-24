@@ -93,6 +93,9 @@ _DUST_WINDOWSIZE = 64
 _DUST_WINDOWSTEP = 32
 _DEFATULT_DUST_THRESHOLD = 7
 
+# dust snp filter parameters
+_DEF_SNP_DUST_WINDOW = 11
+
 _TEMP_DIR = None
 
 # min_mapq to use as a filter for maped reads
