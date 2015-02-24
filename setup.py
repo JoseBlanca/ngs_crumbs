@@ -188,8 +188,9 @@ setup_args = {'name': 'ngs_crumbs',
               }
 
 if _SETUPTOOLS:
-    setup_args['install_requires'] = ['configobj', 'toolz']
-    # ['biopython >= 1.60', 'pysam>=0.8', 'rpy2', 'matplotlib']
+    setup_args['install_requires'] = ['configobj', 'toolz',
+                                      'biopython >= 1.60', 'pysam>=0.8',
+                                      'matplotlib']
     if version_info[0] < 3 or (version_info[0] == 3 and version_info[1] < 3):
         # until python 3.3 the standard file module has no support for
         # wrapping file object and required to open a new file
