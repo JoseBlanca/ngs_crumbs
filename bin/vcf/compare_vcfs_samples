@@ -20,7 +20,7 @@ import sys
 import argparse
 
 
-from vcf import Reader
+from crumbs.utils.optional_modules import Reader
 from crumbs.vcf.statistics import VCFcomparisons
 
 

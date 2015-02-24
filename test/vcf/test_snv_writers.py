@@ -107,8 +107,10 @@ ref 10 . A C 10 PASS .
         ref_fhand.flush()
 
         out_fhand1 = StringIO()
+
         writer = IlluminaWriter(ref_fhand.name, out_fhand1, min_length=0,
                                 vcf_fpath=vcf_compressed.name)
+
         for snp in Reader(filename=vcf_compressed.name):
             writer.write(snp)
 
@@ -351,5 +353,5 @@ S6\tB\tB\tB
 
 
 if __name__ == "__main__":
-#     import sys; sys.argv = ['', 'ParentCheckerWriterTest.test_parentChecker']
+    # import sys; sys.argv = ['', 'IlluminaWriterTest.test_illumina_writer']
     unittest.main()

@@ -21,9 +21,10 @@ Calculate genotyping related statistics by sample
 
 import sys
 import argparse
-import vcf
+
 from crumbs.statistics import IntCounter
 from crumbs.vcf.statistics import get_call_data, get_snpcaller_name, GQ
+from crumbs.utils.optional_modules import Reader
 
 
 def _setup_argparse():
@@ -58,7 +59,7 @@ def _parse_args(parser):
 def main():
     parser = _setup_argparse()
     args = _parse_args(parser)
-    reader = vcf.Reader(args['in_fhand'])
+    reader = Reader(args['in_fhand'])
     vcf_variant = get_snpcaller_name(reader)
     gq_threshold = args['gq_threshold']
     geno_stats_by_sample = IntCounter()

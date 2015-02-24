@@ -16,10 +16,9 @@
 from __future__ import division
 from collections import Counter, namedtuple
 
-from scipy.stats import fisher_exact as scipy_fisher
-
 from crumbs.vcf.statistics import choose_samples
 from crumbs.iterutils import RandomAccessIterator
+from crumbs.utils.optional_modules import scipy_fisher
 
 
 # Missing docstring

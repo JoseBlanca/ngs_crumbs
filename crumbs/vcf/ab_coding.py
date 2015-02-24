@@ -20,11 +20,9 @@ from itertools import imap
 from array import array
 from warnings import warn
 
-import matplotlib
-from matplotlib.figure import Figure
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from vcf import Reader as pyvcfReader
+from crumbs.utils.optional_modules import (Reader as pyvcfReader,
+                                           Figure, make_axes_locatable,
+                                           LogNorm)
 
 from crumbs.iterutils import RandomAccessIterator
 from crumbs.vcf.ld import _count_biallelic_haplotypes
@@ -411,7 +409,7 @@ class ABCoder(object):
         x = self._smoothes
         y = self._recombs
         image = axes2.hist2d(x, y, bins=bins,
-                             norm=matplotlib.colors.LogNorm())[-1]
+                             norm=LogNorm())[-1]
 
         axes2.tick_params(
         which='both',      # both major and minor ticks are affected

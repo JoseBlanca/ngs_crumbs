@@ -17,12 +17,6 @@
 from __future__ import division
 from tempfile import NamedTemporaryFile
 
-try:
-    from pysam import Samfile
-except ImportError:
-    # This is an optional requirement
-    pass
-
 from crumbs.utils.tags import (SEQS_PASSED, SEQS_FILTERED_OUT, CHIMERA,
                                NON_CHIMERIC, UNKNOWN)
 from crumbs.statistics import IntCounter
@@ -31,6 +25,7 @@ from crumbs.mapping import (map_process_to_sortedbam, map_with_bwamem,
                             alignedread_to_seqitem)
 from crumbs.seq.seqio import write_seqs
 from crumbs.seq.pairs import group_pairs, group_pairs_by_name
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def seq_to_filterpackets(seq_packets, group_paired_reads=False):
@@ -273,7 +268,7 @@ def classify_mapped_reads(bam_fhand, mate_distance,
     '''It classifies sequences from bam file in chimeric, unknown and
     non chimeric, according to its distance and orientation in the reference
     sequence'''
-    bamfile = Samfile(bam_fhand.name)
+    bamfile = AlignmentFile(bam_fhand.name)
 
     # settings. Include in function properties with default values
     max_clipping = settings['MAX_CLIPPING']
@@ -333,7 +328,7 @@ def calculate_distance_distribution(interleave_fhand, index_fpath,
                           extra_params=extra_params, threads=threads)
     map_process_to_sortedbam(bwa, bam_fhand.name, key='queryname',
                              tempdir=tempdir)
-    bamfile = Samfile(bam_fhand.name)
+    bamfile = AlignmentFile(bam_fhand.name)
     stats = {'outies': IntCounter(), 'innies': IntCounter(),
              'others': IntCounter()}
     for grouped_mates in _group_alignments_reads_by_qname(bamfile):

@@ -561,5 +561,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys; sys.argv = ['', 'BinaryFilterTest.test_by_sample_bin']
+    import sys; sys.argv = ['', 'ConsistentRecombinationTest']
     unittest.main()

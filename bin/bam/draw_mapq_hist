@@ -19,12 +19,12 @@
 import argparse
 import sys
 
-import pysam
 from crumbs.utils.bin_utils import main, build_version_msg
 
 from crumbs.bam.statistics import ReadStats
 from crumbs.statistics import draw_histogram_ascii
 from crumbs.plot import draw_histogram_in_fhand
+from crumbs.utils.optional_modules import AlignmentFile
 
 
 def _setup_argparse():
@@ -61,7 +61,7 @@ def run():
     parser = _setup_argparse()
     args = _parse_args(parser)
     out_fhand = args['out_fhand']
-    bams = [pysam.Samfile(bam_fhand.name) for bam_fhand in args['bam_fhands']]
+    bams = [AlignmentFile(bam_fhand.name) for bam_fhand in args['bam_fhands']]
     read_stats = ReadStats(bams)
     mapq_counter = read_stats.mapqs
 

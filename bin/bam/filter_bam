@@ -27,7 +27,7 @@ def _setup_argparse():
     description = 'Filter bam reads by flag or mapping quality'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('input', help="bam file with mapping result",
-                       type=argparse.FileType('rt'))
+                        type=argparse.FileType('rt'))
 
     parser.add_argument('-o', '--bam_output', default='output.bam',
                         help='gff output file', type=argparse.FileType('wt'))

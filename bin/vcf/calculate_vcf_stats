@@ -23,19 +23,14 @@ from os.path import join
 from itertools import izip, chain, repeat
 from collections import OrderedDict
 
-import numpy
-from matplotlib.mlab import griddata
-from matplotlib import cm
-from matplotlib.colorbar import make_axes, Colorbar
-from matplotlib.ticker import ScalarFormatter
-
 from crumbs.vcf.statistics import VcfStats, WINDOWS_SIZE
 from crumbs.vcf.snv import (HET, HOM, HOM_ALT, HOM_REF,
                             DEF_MIN_CALLS_FOR_POP_STATS)
 from crumbs.plot import (draw_histogram_in_fhand, draw_histograms, LINE,
                          get_fig_and_canvas, draw_int_boxplot,
                          draw_histogram_in_axes, BAR)
-
+from crumbs.utils.optional_modules import (griddata, cm, make_axes, Colorbar,
+                                           ScalarFormatter, linspace)
 PLOTS_PER_CHART = 3
 
 
@@ -279,8 +274,8 @@ def draw_call_density(vcf_stats, out_dir, n_bins=100, rc_max=100,
                   'aspect': 'equal'}
 
         # gt_counts
-        xi = numpy.linspace(0, rc_max, 100)
-        yi = numpy.linspace(0, ac_max, 100)
+        xi = linspace(0, rc_max, 100)
+        yi = linspace(0, ac_max, 100)
 
         zi = griddata(x, y, gt_counts, xi, yi)
 

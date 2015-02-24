@@ -73,32 +73,47 @@ def run():
     out_fhand = args['out_fhand']
 
     genome_coverages = GenomeCoverages(args['in_fhands'])
+    samples = genome_coverages.samples
 
-    title = 'Distribution of coverages for mapq >= than (see legend)'
     titles = []
     counters = []
-    distrib_labels = []
     xlabel = "Coverage"
     ylabel = "Num. Bases with this coverage"
+    linestyles = []
+    distrib_labels = []
+    for sample in samples:
+        sample_counters = genome_coverages.get_per_sample_mapq_counters(sample)
+        title = 'Dist. of coverages for mapq >= than (see legend)'
+        if sample is not None:
+            title += ' for {}'.format(sample)
 
-    for mapq_threshold in genome_coverages.mapqs_to_calculate:
-        distrib_labels.append(mapq_threshold)
-        counters.append(genome_coverages.get_mapq_counter(mapq_threshold))
-        titles.append(title)
-    linestyles = ['--', '-.', ':', '-']
+        for mapq_threshold in genome_coverages.mapqs_to_calculate:
+            counters.append(sample_counters[mapq_threshold])
+            titles.append(title)
+            distrib_labels.append(mapq_threshold)
+        linestyles += ['--', '-.', ':', '-']
     assert len(linestyles) == len(genome_coverages)
+    num_cols = 2 if len(samples) > 1 else 1
     draw_histograms(counters, fhand=out_fhand, distrib_labels=distrib_labels,
                     xlabel=xlabel, ylabel=ylabel, titles=titles,
-                    plots_per_chart=len(genome_coverages), num_cols=1,
+                    plots_per_chart=len(genome_coverages.mapqs_to_calculate),
                     xmin=args['xlim_left'], xmax=args['xlim_rigth'],
-                    linestyles=linestyles, ylimits=args['ylimits'])
+                    linestyles=linestyles, ylimits=args['ylimits'],
+                    num_cols=num_cols)
 
-    coverage_counter = genome_coverages.get_mapq_counter(0)
+    for sample in samples:
+        write_coverage_stats(genome_coverages, sample, sys.stdout)
 
-    stdout = 'Minimum coverage value: {}\n'.format(coverage_counter.min)
+
+def write_coverage_stats(genome_coverages, sample, out_fhand):
+    genome_coverages_sample = genome_coverages.get_per_sample_mapq_counters(sample)
+    coverage_counter = genome_coverages_sample[0]
+    stdout = 'Data for sample {}\n'.format(sample)
+    stdout += '-------------------------------\n'
+    stdout += 'Minimum coverage value: {}\n'.format(coverage_counter.min)
     stdout += 'Maximum coverage value: {}\n'.format(coverage_counter.max)
     stdout += 'Median value: {}\n'.format(coverage_counter.median)
-    sys.stdout.write(stdout)
+    out_fhand.write(stdout)
 
     total_base_length = coverage_counter.count
     limit_count = Counter()
@@ -106,18 +121,19 @@ def run():
         for coverage_limit in COVERAGE_RANGE:
             if cov >= coverage_limit:
                 limit_count[coverage_limit] += count
-    sys.stdout.write('Positions with the given coverage:\n')
-    sys.stdout.write('----------------------------------\n')
-    sys.stdout.write('Coverture\tcount\t%porcentaje bases\t')
-    sys.stdout.write('coverture/positions cov>1\n')
+    out_fhand.write('Positions with the given coverage:\n')
+    out_fhand.write('----------------------------------\n')
+    out_fhand.write('Coverture\tcount\t%porcentaje bases\t')
+    out_fhand.write('coverture/positions cov>1\n')
 
     for limit in sorted(limit_count.keys()):
         percent_mapped = limit_count[limit] / total_base_length
         fraction_of_1 = limit_count[limit] / limit_count[1]
-        sys.stdout.write("{}\t{}\t{:.2%}\t{}\n".format(limit,
-                                                       limit_count[limit],
-                                                       percent_mapped,
-                                                       fraction_of_1))
+        out_fhand.write("{}\t{}\t{:.2%}\t{}\n".format(limit,
+                                                      limit_count[limit],
+                                                      percent_mapped,
+                                                      fraction_of_1))
+    out_fhand.write("\n")
 
 if __name__ == '__main__':
     # sys.argv.append('-h')

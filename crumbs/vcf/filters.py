@@ -16,33 +16,24 @@
 from __future__ import division
 
 import random
-from collections import OrderedDict
 from math import isinf, isnan
-from os.path import join as pjoin
-from os.path import exists
+from os.path import join as pjoin, exists
 from os import mkdir
-from collections import namedtuple, Counter
-import array
+from collections import namedtuple, Counter, OrderedDict
+from array import array
 from StringIO import StringIO
 from operator import itemgetter
 from itertools import chain
 import warnings
 
-import numpy
-
-from scipy.optimize import curve_fit
-from scipy.stats.distributions import t
-
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-
-from crumbs.iterutils import group_in_packets
-from crumbs.iterutils import RandomAccessIterator
+from crumbs.iterutils import group_in_packets, RandomAccessIterator
 
 from crumbs.vcf.snv import VCFReader, VCFWriter, DEF_MIN_CALLS_FOR_POP_STATS
 from crumbs.vcf.ld import calc_recomb_rate
 from crumbs.vcf import snv
-
+from crumbs.utils.optional_modules import (Figure, FigureCanvas, curve_fit, t,
+                                           absolute, exp, percentile, r,
+                                           IntVector)
 
 # Missing docstring
 # pylint: disable=C0111
@@ -320,11 +311,10 @@ FISHER_CACHE = {}
 def _fisher_extact_rxc(counts_obs, counts_exp):
     if (counts_obs, counts_exp) in FISHER_CACHE:
         return FISHER_CACHE[(counts_obs, counts_exp)]
-    import rpy2.robjects as robjects
-    env = robjects.r.baseenv()
-    env['obs'] = robjects.IntVector(counts_obs)
-    env['expected'] = robjects.IntVector(counts_exp)
-    pvalue = robjects.r('fisher.test(cbind(obs, expected))$p.value')[0]
+    env = r.baseenv()
+    env['obs'] = IntVector(counts_obs)
+    env['expected'] = IntVector(counts_exp)
+    pvalue = r('fisher.test(cbind(obs, expected))$p.value')[0]
 
     FISHER_CACHE[(counts_obs, counts_exp)] = pvalue
     return pvalue
@@ -348,7 +338,7 @@ class WeirdSegregationFilter(object):
             raise ValueError(msg)
         self.win_mask_width = win_mask_width
         self.min_num_snvs_check_in_win = min_num_snvs_check_in_win
-        self._failed_freqs = array.array('f')
+        self._failed_freqs = array('f')
         self.tot_snps = 0
         self.passed_snps = 0
         self.samples = samples
@@ -586,9 +576,9 @@ class WeirdRecombFilter(object):
         self.tot_snps = 0
         self.passed_snps = 0
         self.not_fitted_counter = Counter()
-        self.recomb_rates = {'ok': array.array('f'),
-                             'ok_conf_is_None': array.array('f'),
-                             'not_ok': array.array('f')}
+        self.recomb_rates = {'ok': array('f'),
+                             'ok_conf_is_None': array('f'),
+                             'not_ok': array('f')}
 
     def filter_snvs(self, snvs):
 
@@ -657,11 +647,11 @@ class WeirdRecombFilter(object):
 def _kosambi(phys_dist, phys_gen_dist_conversion, recomb_at_origin):
     phys_gen_dist_conversion = abs(phys_gen_dist_conversion)
     # recomb rate should be in morgans per base
-    d4 = numpy.absolute(phys_dist) * phys_gen_dist_conversion * 4
+    d4 = absolute(phys_dist) * phys_gen_dist_conversion * 4
     with warnings.catch_warnings():
         warnings.filterwarnings('error')
         try:
-            ed4 = numpy.exp(d4)
+            ed4 = exp(d4)
         except Warning:
             raise RuntimeError('Numpy raised a warning calculating exp')
     return 0.5 * (ed4 - 1) / (ed4 + 1) + recomb_at_origin
@@ -704,8 +694,8 @@ def _calc_ajusted_recomb(dists, recombs, max_recomb, max_zero_dist_recomb,
         axes = None
         fig = None
 
-    dists = numpy.array(dists)
-    recombs = numpy.array(recombs)
+    dists = array(dists)
+    recombs = array(recombs)
     recomb_rate = 1e-7
     popt, pcov = _fit_kosambi(dists, recombs, init_params=[recomb_rate, 0])
     if popt is None:
@@ -750,7 +740,7 @@ def _calc_ajusted_recomb(dists, recombs, max_recomb, max_zero_dist_recomb,
         axes.plot(close_dists, est_close_recombs, c='b', label='2nd_fit')
 
     # we exclude the markers with a residual outlier
-    quartile_25, quartile_75 = numpy.percentile(residuals, [25, 75])
+    quartile_25, quartile_75 = percentile(residuals, [25, 75])
     iqr = quartile_75 - quartile_25
     outlayer_thrld = [quartile_25 - iqr * 1.5, quartile_75 + iqr * 1.5]
     ok_markers = [idx for idx, res in enumerate(residuals) if (not isnan(res) and (outlayer_thrld[0] < res < outlayer_thrld[1]))]

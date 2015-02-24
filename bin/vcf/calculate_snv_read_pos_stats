@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+# Copyright 2012 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
+# This file is part of ngs_crumbs.
+# ngs_crumbs is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# ngs_crumbs is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with seq_crumbs. If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+
+from crumbs.vcf.snv import VCFReader
+from crumbs.vcf.statistics import calc_snv_read_pos_stats, draw_read_pos_stats
+from crumbs.utils.optional_modules import AlignmentFile
+
+
+def _setup_argparse():
+    'It prepares the command line argument parsing.'
+    description = 'Filter the snvs in an indexed vcf'
+    parser = argparse.ArgumentParser(description=description)
+    in_help = 'Indexed vcf file'
+    parser.add_argument('input', help=in_help, type=argparse.FileType('rt'))
+    parser.add_argument('-b', '--bam_file',
+                        help='Bam file used in the snp calling"')
+    parser.add_argument('-m', '--max_snvs', type=int,
+                        help='Number of snvs to use for the stats')
+    parser.add_argument('-p', '--max_pos', type=int,
+                        help='Number of positions to use for the stats')
+    parser.add_argument('-o', '--output', type=argparse.FileType('w'),
+                        help='Output VCF file (default STDOUT)')
+    return parser
+
+
+def _parse_args(parser):
+    '''It parses the command line and it returns a dict with the arguments.'''
+    parsed_args = parser.parse_args()
+    args = {}
+    args['vcf_fhand'] = parsed_args.input
+    args['bam_fpath'] = parsed_args.bam_file
+    args['max_snvs'] = parsed_args.max_snvs
+    args['max_pos'] = parsed_args.max_pos
+    args['plot_fhand'] = parsed_args.output
+    return args
+
+
+def main():
+    parser = _setup_argparse()
+    args = _parse_args(parser)
+
+    snvs = VCFReader(args['vcf_fhand']).parse_snvs()
+    bam = AlignmentFile(args['bam_fpath'])
+
+    stats = calc_snv_read_pos_stats(bam, snvs, max_snps=args['max_snvs'],
+                                    max_pos=args['max_pos'])
+    draw_read_pos_stats(stats, args['plot_fhand'])
+
+
+if __name__ == '__main__':
+    main()

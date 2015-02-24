@@ -17,11 +17,9 @@ from __future__ import division
 
 from array import array
 
-from Bio import SeqIO
-from vcf import Reader
-
 from crumbs.vcf.ab_coding import ABCoder, DEF_AB_CODER_THRESHOLD
 from crumbs.vcf.snv import get_or_create_id
+from crumbs.utils.optional_modules import Reader, seq_index
 
 
 # Missing docstring
@@ -108,7 +106,7 @@ class IlluminaWriter(object):
             raise ValueError(msg)
         self._min_len = min_length
 
-        self._ref_seqs = SeqIO.index(ref_fpath, format='fasta')
+        self._ref_seqs = seq_index(ref_fpath, format='fasta')
 
         if vcf_fpath:
             self._snvs = Reader(filename=vcf_fpath)

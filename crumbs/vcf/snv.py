@@ -21,17 +21,16 @@ import gzip
 from operator import itemgetter
 from io import BytesIO
 
-from vcf import Reader as pyvcfReader
-from vcf import Writer as pyvcfWriter
-from vcf.model import make_calldata_tuple
-# ouch, _Call is a private class, but we don't know how to modify a Call
-from vcf.model import _Call as pyvcfCall
-from vcf.model import _Record as pyvcfRecord
 from crumbs.iterutils import generate_windows
-
 from crumbs.seq.seqio import read_seqs
 from crumbs.seq.seq import get_name, get_length
 from crumbs.utils.file_utils import flush_fhand
+# ouch, _Call is a private class, but we don't know how to modify a Call
+from crumbs.utils.optional_modules import (Reader as pyvcfReader,
+                                           Writer as pyvcfWriter,
+                                           _Call as pyvcfCall,
+                                           _Record as pyvcfRecord,
+                                           make_calldata_tuple)
 
 # Missing docstring
 # pylint: disable=C0111

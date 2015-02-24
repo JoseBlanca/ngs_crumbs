@@ -13,11 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-
 from crumbs.plot import get_fig_and_canvas
 from crumbs.vcf.snv import VCFReader
+from crumbs.utils.optional_modules import Figure, FigureCanvas
 
 FILTER_ALLELES_GT = None    # it could be an integer, i.e. 1 to keep only the
                             # 2 parental alleles in a F2
@@ -98,7 +96,7 @@ def plot_haplotypes(vcf_fhand, plot_fhand, genotype_mode=REFERENCE,
         axes.tick_params(axis='y', left='on', right='off', labelleft='off')
         axes.set_ylabel(sample)
 
-    canvas = FigureCanvasAgg(fig)
+    canvas = FigureCanvas(fig)
     canvas.print_figure(plot_fhand, dpi=300)
     plot_fhand.flush()
 

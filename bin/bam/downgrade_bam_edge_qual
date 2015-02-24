@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-'It dows samtools calmdin a bam file'
-
 # Copyright 2012 Jose Blanca, Peio Ziarsolo, COMAV-Univ. Politecnica Valencia
 # This file is part of ngs_crumbs.
 # ngs_crumbs is free software: you can redistribute it and/or modify
@@ -21,7 +19,7 @@ import argparse
 import sys
 
 from crumbs.utils.bin_utils import main, build_version_msg
-from crumbs.bam.bam_tools import index_bam, calmd_bam
+from crumbs.bam.bam_tools import BAD_QUAL, downgrade_read_edges
 
 
 def _setup_argparse():
@@ -30,17 +28,15 @@ def _setup_argparse():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('input', help='BAM or SAM file to process',
                         type=argparse.FileType('rt'))
-    parser.add_argument('-o', '--outfile', dest='outfile',
-                help='Output file. Use it if you want to mantain input file',
-                type=argparse.FileType('wt'))
-    parser.add_argument('-f', '--reference', dest='reference', required=True,
-                help='reference file used to align the bam',
-                type=argparse.FileType('rt'))
-
-    help_msg = "use this option if you don't want to create the index after "
-    help_msg += 'sorting'
-    parser.add_argument('--no-index', action='store_true', dest='skip_index',
-                        help=help_msg)
+    parser.add_argument('-o', '--outfile', type=argparse.FileType('wt'),
+                        help='Output file.')
+    size_help = 'Size of the segmnet on each edge to downgrade'
+    size_help += ' (default: %(default)s))'
+    parser.add_argument('-s', '--edge_size', default=2, help=size_help,
+                        type=int)
+    down_help = 'Bad Quality value to use (default: %(default)s))'
+    parser.add_argument('-q', '--bad_qual', default=BAD_QUAL, help=down_help,
+                        type=int)
     parser.add_argument('--version', action='version',
                         version=build_version_msg())
     return parser
@@ -50,37 +46,24 @@ def _parse_args(parser):
     'It parses the command line and it returns a dict with the arguments.'
 
     parsed_args = parser.parse_args()
-    in_fhand = parsed_args.input
-    out_fhand = getattr(parsed_args, 'outfile')
-    skip_index = parsed_args.skip_index
-    reference_fhand = parsed_args.reference
+    args = {}
+    args['in_fhand'] = parsed_args.input
+    args['out_fhand'] = parsed_args.outfile
+    args['edge_size'] = parsed_args.edge_size
+    args['bad_qual'] = parsed_args.bad_qual
 
-    args = {'out_fhand': out_fhand, 'in_fhand': in_fhand,
-            'skip_index': skip_index, 'reference_fhand': reference_fhand}
-    return args, parsed_args
+    return args
 
 
 def run():
-    'It makes the actual job'
     parser = _setup_argparse()
-    args = _parse_args(parser)[0]
+    args = _parse_args(parser)
 
     in_fhand = args['in_fhand']
     out_fhand = args['out_fhand']
-    skip_index = args['skip_index']
-    ref_fhand = args['reference_fhand']
 
-    if out_fhand is None:
-        out_fpath = in_fhand.name
-    else:
-        out_fpath = out_fhand.name
-
-    calmd_bam(in_fhand.name, reference_fpath=ref_fhand.name,
-              out_bam_fpath=out_fpath)
-
-    if not skip_index:
-        index_bam(out_fpath)
-
+    downgrade_read_edges(in_fhand.name, out_fhand.name, size=args['edge_size'],
+                         bad_qual_value=args['bad_qual'])
 
 if __name__ == '__main__':
     # sys.argv.append('-h')

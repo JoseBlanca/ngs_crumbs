@@ -18,9 +18,7 @@ import subprocess
 from operator import itemgetter
 from tempfile import NamedTemporaryFile
 
-from pysam import Samfile
-
-from crumbs.utils.optional_modules import Seq
+from crumbs.utils.optional_modules import Seq, AlignmentFile
 from crumbs.utils.tags import (TRIMMING_RECOMMENDATIONS, QUALITY, OTHER,
                                VECTOR, TRIMMING_KINDS, SEQS_PASSED,
                                ORPHAN_SEQS)
@@ -397,7 +395,7 @@ class TrimMatePairChimeras(_BaseTrim):
         'It trims the seqs'
         self._pre_trim(trim_packet)
         trimmed_seqs = []
-        bamfile = Samfile(self._bam_fhand.name)
+        bamfile = AlignmentFile(self._bam_fhand.name)
         for grouped_mates in _group_alignments_reads_by_qname(bamfile):
             for aligned_reads in _split_mates(grouped_mates):
                 trimmed_seqs.append([self._do_trim(aligned_reads)])

@@ -180,7 +180,7 @@ class DrawDistanceDistribution(unittest.TestCase):
         assert 'usage' in check_output([draw_bin, '-h'])
         cmd = [draw_bin, '-r', index_fpath, '-o', distribution_fhand.name,
                in_fhand.name]
-        check_output(cmd)
+        print check_output(cmd)
         # raw_input(distribution_fhand.name)
 
 if __name__ == "__main__":
