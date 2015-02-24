@@ -217,7 +217,6 @@ class ABCoder(object):
             if start < 0:
                 start = 0
             end = idx + half_win + 1
-
             snp2_idxs = []
             for snp2_idx in range(start, end):
                 try:
@@ -255,7 +254,7 @@ class ABCoder(object):
         return recombs
 
     def _smooth(self, snp_idx_to_smooth, snp_gts, samples):
-        snp1 = snp_gts[snp_idx_to_smooth][0]     
+        snp1 = snp_gts[snp_idx_to_smooth][0]
         snp1_calls = [snp1.genotype(sample) for sample in samples]
         chrom = snp1.CHROM
 
@@ -329,7 +328,48 @@ class ABCoder(object):
             smoothed_genos.append(geno)
         return smoothed_genos
 
+    def _create_windows(self, pos):
+        #         123456789012345
+        # v              X
+        # win1        ---X---
+        # win2     ------X
+        # win3           X------
+        # big_win  -------------
+        win = self.window
+        half_win = (win - 1) // 2
+
+        # win1
+        start = pos - half_win
+        if start < 0:
+            start = 0
+        end = pos + half_win
+        win1 = start, end
+
+        start = pos - win + 1
+        if start < 0:
+            start = 0
+        win2 = start, pos
+
+        win3 = pos, pos + win - 1
+        return win1, win2, win3
+
     def _smooth_genotypes(self, snp_ab_genotypes, samples):
+        big_win = self.window * 2 - 1
+        snp_ab_genotypes = RandomAccessIterator(snp_ab_genotypes,
+                                                rnd_access_win=big_win)
+
+        for idx, (snp, ab_genotype) in enumerate(snp_ab_genotypes):
+            wins = self._create_windows(idx)
+            for win in wins:
+                transpose here
+                for sample in samples:
+                    keep memory of the samples already smothed
+                    snps_in_win = snp_ab_genotypes[win[0]: win[1]]
+                    print list(snps_in_win)
+                if all samples are smoothed break the win loop
+            pass
+
+    def _smooth_genotypes_old(self, snp_ab_genotypes, samples):
         win = self.window
         snp_ab_genotypes = RandomAccessIterator(snp_ab_genotypes,
                                                 rnd_access_win=win)

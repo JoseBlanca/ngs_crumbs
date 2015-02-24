@@ -77,7 +77,7 @@ class Smoother(object):
         indis_gts = {indi: [] for indi in samples}
         for indi in samples:
             for snp_gt in gt_for_snps_in_win:
-                snp_indi_gt =  snp_gt.get(indi, (indi, None))
+                snp_indi_gt = snp_gt.get(indi, (indi, None))
                 snp_indi_gt = tuple(sorted(snp_indi_gt))
                 indis_gts[indi].append(snp_indi_gt)
 

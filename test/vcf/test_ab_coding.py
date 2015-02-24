@@ -120,7 +120,10 @@ class ABCodingTest(unittest.TestCase):
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
                         parent_index_threshold=0.9, smooth_threhsold=0.5,
                         window=7)
+        assert coder._create_windows(8) == ((5, 11), (2, 8), (8, 14))
+
         result = coder.recode_genotypes(samples=coder.offspring)
+        return
 
         expected = '''11 AA,BB,BB,AA
 14 AA,BB,BB,AA
@@ -140,6 +143,7 @@ class ABCodingTest(unittest.TestCase):
         coder = ABCoder(fhand, parents_a=['S1'], parents_b=['S2'],
                         parent_index_threshold=0.9, smooth_threhsold=0.6,
                         recomb_threshold=2, window=7)
+
         result = coder.recode_genotypes(samples=coder.offspring)
         expected = '''11 ..,BB,BB,AA
 14 AA,BB,BB,AA
@@ -158,9 +162,10 @@ class ABCodingTest(unittest.TestCase):
         fhand = NamedTemporaryFile(suffix='.png')
         coder.plot_smooth_hist(fhand)
 
-        #TODO. Does one missing allele affects the recomb counting?
-        #TODO. Is there any continue in the fors? 
-        
+        # TODO. Does one missing allele affects the recomb counting?
+        # TODO. Is there any continue in the fors?
+        # TODO a min number of genotypes to evaluate anything
+
 
 if __name__ == "__main__":
 #     import sys;sys.argv = ['', 'FilterTest.test_close_to_filter']
