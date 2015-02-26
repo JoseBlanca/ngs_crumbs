@@ -27,7 +27,8 @@ from crumbs.bam.statistics import (count_reads, ReferenceStats, ReadStats,
                                    get_reference_counts,
                                    get_reference_counts_dict,
                                    get_genome_coverage, get_bam_readgroups,
-                                   mapped_count_by_rg, GenomeCoverages)
+                                   mapped_count_by_rg, GenomeCoverages,
+                                   BamCoverages)
 
 
 # pylint: disable=R0201
@@ -94,25 +95,6 @@ class StatsTest(unittest.TestCase):
         assert cov.min == 6
         assert cov.max == 9
 
-    def test_genome_coverage_distrib(self):
-        bam_fhand = open(os.path.join(TEST_DATA_DIR, 'seqs.bam'))
-        cov = GenomeCoverages([bam_fhand])
-        res1 = 'IntCounter({9: 73})'
-        res2 = 'IntCounter({9: 73, 6: 1})'
-        assert repr(cov.get_per_sample_mapq_counters('group1+454')[0]) == res1
-        assert repr(cov.get_per_sample_mapq_counters('group2+454')[30]) == res2
-        assert cov.samples == ['group1+454', 'group2+454']
-        assert len(cov) == 8
-
-    def test_bin_draw_cov_hist(self):
-        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
-        binary = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
-        out_fhand = NamedTemporaryFile(suffix='.png')
-        cmd = [binary, bam_fpath, '-o', out_fhand.name]
-        res = check_output(cmd)
-        assert 'group2+454' in res
-        # raw_input(out_fhand.name)
-
     def test_flag_to_binary(self):
         assert not _flag_to_binary(0)
         assert _flag_to_binary(1) == [0]
@@ -171,8 +153,35 @@ class GenomeCoverageTest(unittest.TestCase):
         assert scatter_group.items() == [(0, 2400), (9, 144), (6, 3)]
 
 
+class BamCoverageTest(unittest.TestCase):
+    def test_bam_coverage(self):
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
+        cov = BamCoverages([bam_fpath], sampling_win_step=1)
+        exp = {'group1+454': 9}
+        assert cov._calculate_coverages_in_pos('reference1', 200) == exp
+        res = cov.calculate_coverage_distrib_in_region(region=('reference1',
+                                                               None, None))
+        assert res['group1+454'] == {9: 73}
+        cov = BamCoverages([bam_fpath], window=2, sampling_win_step=1)
+        res = cov.calculate_coverage_distrib_in_region(region=('reference1',
+                                                               None, None))
+        assert res == {'group1+454': {9: 72, 5: 2}}
+
+        cov = BamCoverages([bam_fpath], window=21, sampling_win_step=10)
+        res = cov.calculate_coverage_distrib_in_region(region=('reference1',
+                                                               None, None))
+        assert res == {'group1+454': {9: 53, 3: 20, 6: 20}}
+
+    def test_bin_draw_cov_hist(self):
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
+        binary = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
+        out_fhand = NamedTemporaryFile(suffix='.png')
+        out_fhand2 = NamedTemporaryFile(suffix='.txt')
+        cmd = [binary, bam_fpath, '-p', out_fhand.name, '-o', out_fhand2.name]
+        check_output(cmd)
+        assert 'group2+454' in open(out_fhand2.name).read()
+        # raw_input(out_fhand.name)
+
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'StatsTest.test_get_readgroup']
-    # import sys;sys.argv = ['', 'StatsTest.test_genome_coverage_distrib',
-    #                             'StatsTest.test_bin_draw_cov_hist']
+    # import sys;sys.argv = ['', 'BamCoverageTest']
     unittest.main()

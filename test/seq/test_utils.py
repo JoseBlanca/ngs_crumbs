@@ -35,9 +35,9 @@ from crumbs.seq.utils.file_formats import (get_format, FILEFORMAT_INVENTORY,
 from crumbs.utils.sqlite_utils import SqliteCache
 
 
-
 # pylint: disable=R0201
 # pylint: disable=R0904
+
 
 class UtilsTest(unittest.TestCase):
     'It tests the miscelaneous utilities.'

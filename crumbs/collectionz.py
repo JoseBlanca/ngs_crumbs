@@ -12,7 +12,9 @@
 
 # You should have received a copy of the GNU General Public License
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
+
 from bisect import bisect
+from collections import OrderedDict
 
 
 class OrderedSet(object):
@@ -73,3 +75,16 @@ class KeyedSet(object):
 
     def __len__(self):
         return len(self._items)
+
+
+class RecentlyAddedCache(OrderedDict):
+    def __init__(self, max_size, *args, **kwargs):
+
+        self.max_size = max_size
+        super(RecentlyAddedCache, self).__init__(*args, **kwargs)
+
+    def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
+        super(RecentlyAddedCache, self).__setitem__(key, value,
+                                                    dict_setitem=dict_setitem)
+        if len(self) > self.max_size:
+            self.popitem(last=False)

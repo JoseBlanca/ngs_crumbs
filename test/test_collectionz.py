@@ -14,7 +14,11 @@
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from crumbs.collectionz import OrderedSet, KeyedSet
+from crumbs.collectionz import OrderedSet, KeyedSet, RecentlyAddedCache
+
+# pylint: disable=R0201
+# pylint: disable=R0904
+# pylint: disable=C0111
 
 
 class TestCollections(unittest.TestCase):
@@ -70,6 +74,18 @@ class TestCollections(unittest.TestCase):
             assert item not in keyed_set
 
 
+class RecentlyAddedCacheTest(unittest.TestCase):
+    def test_recently_added_cache(self):
+        cache = RecentlyAddedCache(3)
+        cache[1] = 1
+        assert cache[1]
+        cache[2] = 2
+        cache[3] = 3
+        assert cache == {1: 1, 2: 2, 3: 3}
+        cache[4] = 4
+        assert cache == {2: 2, 3: 3, 4: 4}
+
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'TestCollections']
+    # import sys;sys.argv = ['', 'TestCollections']
     unittest.main()

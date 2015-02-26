@@ -23,12 +23,6 @@ from crumbs.utils.test_utils import TEST_DATA_DIR
 
 
 class BinTests(unittest.TestCase):
-    def test_draw_coverage(self):
-        bin_ = os.path.join(BAM_BIN_DIR, 'draw_coverage_hist')
-        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
-        fhand = NamedTemporaryFile(suffix='.png')
-        out = check_output([bin_, bam_fpath, '-o', fhand.name])
-        assert 'group1+454' in out
 
     def test_mapq_hist(self):
         bin_ = os.path.join(BAM_BIN_DIR, 'draw_mapq_hist')

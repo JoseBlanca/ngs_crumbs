@@ -19,7 +19,6 @@ import json
 from os.path import join, abspath
 from collections import Counter
 from itertools import count
-import random
 from array import array
 
 from crumbs.vcf.prot_change import (get_amino_change, IsIndelError,
@@ -34,6 +33,7 @@ from crumbs.vcf.filters import _print_figure
 from crumbs.statistics import calculate_dust_score
 from crumbs.utils.tags import SEQRECORD
 from crumbs.seq.seq import SeqWrapper
+from crumbs.bam.statistics import calculate_window
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
 # Missing docstring
@@ -913,31 +913,7 @@ class LowComplexityRegionAnnotator(BaseAnnotator):
             ref = self.ref_index[snv.chrom]
             self._last_chrom = chrom, ref
 
-        start = snv.pos
-        end = snv.end
-        snv_len = end - start
-        window = self.window
-        if snv_len >= window:
-            start = start
-            end = end
-        else:
-            win_out_snv_len = window - snv_len
-            to_add_left = win_out_snv_len // 2
-            to_add_right = to_add_left
-            if win_out_snv_len % 2:
-                # if random.choice([True, False]):
-                if True:
-                    to_add_left += 1
-                else:
-                    to_add_right += 1
-            start -= to_add_left
-            end += to_add_right
-        if start < 0:
-            start = 0
-            end += abs(start)
-        if end > len(ref):
-            start -= end - len(ref)
-            end = len(ref)
+        start, end = calculate_window(snv.pos, snv.end, self.window, len(ref))
 
         snv_win_seq = SeqWrapper(SEQRECORD, ref[start:end], None)
         score = calculate_dust_score(snv_win_seq)

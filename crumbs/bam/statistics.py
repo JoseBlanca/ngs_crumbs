@@ -21,6 +21,7 @@ from operator import itemgetter
 from itertools import izip
 from array import array
 from collections import Counter
+import random
 
 from crumbs.utils.optional_modules import (histogram, zeros, median,
                                            sum as np_sum)
@@ -32,6 +33,8 @@ from crumbs.statistics import (draw_histogram_ascii, IntCounter, LABELS,
 from crumbs.settings import get_setting
 from crumbs.bam.flag import SAM_FLAG_BINARIES, SAM_FLAGS
 from crumbs.utils.bin_utils import get_binary_path
+from crumbs.collectionz import RecentlyAddedCache
+from crumbs.iterutils import generate_windows
 
 
 # pylint: disable=C0111
@@ -313,6 +316,179 @@ def get_rgs_from_samfiles(bams):
     if not rgs:
         rgs[None] = {'LB': None, 'ID': None, 'PL': None, 'SM': None}
     return rgs
+
+
+def calculate_window(start, end, window_len, seq_len):
+    'Given a region it creates a window around with the desired length'
+    snv_len = end - start
+    if snv_len >= window_len:
+        start = start
+        end = end
+    else:
+        win_out_snv_len = window_len - snv_len
+        to_add_left = win_out_snv_len // 2
+        to_add_right = to_add_left
+        if win_out_snv_len % 2:
+            if random.choice([True, False]):
+                to_add_left += 1
+            else:
+                to_add_right += 1
+        start -= to_add_left
+        end += to_add_right
+    if start < 0:
+        start = 0
+        end += abs(start)
+    if end > seq_len:
+        start -= end - seq_len
+        end = seq_len
+    return start, end
+
+
+class BamCoverages(object):
+    def __init__(self, bam_fpaths, min_mapq=None, window=1,
+                 sampling_win_step=1,
+                 bam_pileup_stepper='all', bam_rg_field_for_vcf_sample='SM'):
+        self.min_mapq = min_mapq
+        self.window = window
+        self.bam_pileup_stepper = bam_pileup_stepper
+        self.bam_rg_field_for_vcf_sample = bam_rg_field_for_vcf_sample
+        self._cov_cache = RecentlyAddedCache(window * 2)
+        self.sampling_win_step = sampling_win_step
+        self._bams = []
+        self._rgs = {}
+        self._ref_lens = {}
+        self._prepare_bams(bam_fpaths)
+
+    def _prepare_bams(self, bam_fpaths):
+        bams = []
+        rgs = {}
+        for idx, bam_fpath in enumerate(bam_fpaths):
+            bam = AlignmentFile(bam_fpath)
+            rgs_ = get_bam_readgroups(bam)
+            bams.append({'bam': bam, 'rgs': rgs_})
+            for read_group in rgs_:
+                read_group['bam'] = idx
+                rgs[read_group['ID']] = read_group
+        self._bams = bams
+        self._rgs = rgs
+        bam = bams[0]['bam']
+        # We have to assume that all bmas have the same references
+        ref_lens = {ref: le_ for ref, le_ in zip(bam.references, bam.lengths)}
+        self._ref_lens = ref_lens
+
+    def _count_reads_in_column(self, column, min_mapq):
+        reads = Counter()
+        for pileup_read in column.pileups:
+            alig_read = pileup_read.alignment
+            if min_mapq is not None:
+                read_mapq = alig_read.mapq
+                if read_mapq < min_mapq:
+                    continue
+
+            rg_id = [tag[1] for tag in alig_read.tags if tag[0] == 'RG']
+            if not rg_id:
+                sample = None
+            else:
+                rg_id = rg_id[0]
+                sample_field = self.bam_rg_field_for_vcf_sample
+                sample = self._rgs[rg_id][sample_field]
+            reads[sample] += 1
+        return reads
+
+    def _calculate_coverages_in_pos(self, chrom, pos):
+        cache = self._cov_cache
+        if (chrom, pos) in cache:
+            return cache[(chrom, pos)]
+
+        min_mapq = self.min_mapq
+        start = pos
+        end = pos + 1
+        reads = Counter()
+        for bam in self._bams:
+            columns = bam['bam'].pileup(reference=chrom, start=start,
+                                        end=end,
+                                        stepper=self.bam_pileup_stepper,
+                                        truncate=True)
+            for column in columns:
+                reads.update(self._count_reads_in_column(column, min_mapq))
+
+        cache[(chrom, pos)] = reads
+        return reads
+
+    def _calculate_coverages_in_win(self, chrom, start, end):
+        counts = Counter()
+        n_pos = 0
+        for pos in xrange(start, end, self.sampling_win_step):
+            cnts_in_pos = self._calculate_coverages_in_pos(chrom, pos)
+            counts.update(cnts_in_pos)
+            n_pos += 1
+        if n_pos:
+            cnts = {sample: cnt / n_pos for sample, cnt in counts.items()}
+        else:
+            cnts = {}
+        return cnts
+
+    def calculate_coverage_in_pos(self, chrom, pos):
+        start, end = calculate_window(pos, pos + 1, self.window,
+                                      self._ref_lens[chrom])
+        return self._calculate_coverages_in_win(chrom, start, end)
+
+    def _calculate_complete_coverage_distrib(self, region):
+        if region is None:
+            chrom, start, end = None, None, None
+        else:
+            chrom, start, end = region
+
+        min_mapq = self.min_mapq
+        covs = {sample: IntCounter() for sample in self.samples}
+        for bam in self._bams:
+            columns = bam['bam'].pileup(reference=chrom, start=start, end=end,
+                                        stepper=self.bam_pileup_stepper,
+                                        truncate=True)
+            for column in columns:
+                col_counts = self._count_reads_in_column(column, min_mapq)
+                for sample, sample_cov in col_counts.items():
+                    covs[sample][sample_cov] += 1
+        return covs
+
+    def calculate_coverage_distrib_in_region(self, region=None):
+        if region is None:
+            if self.window == 1:
+                regions = None
+            else:
+                regions = [(ref, 0, le_ - 1) for ref, le_ in self._ref_lens.items()]
+        else:
+            regions = [region]
+
+        if self.window == 1:
+            if regions is None:
+                region = None
+            else:
+                region = regions[0]
+            return self._calculate_complete_coverage_distrib(region)
+
+        counts = {}
+        for region in regions:
+            chrom, start, end = region
+            for start, end in generate_windows(self.window, start=0,
+                                               end=self._ref_lens[chrom],
+                                               step=1):
+                counts_in_win = self._calculate_coverages_in_win(chrom, start,
+                                                                 end)
+                for sample, cnts_in_win in counts_in_win.items():
+                    if sample not in counts:
+                        counts[sample] = IntCounter()
+                    counts[sample][int(round(cnts_in_win))] += 1
+
+        return counts
+
+    @property
+    def samples(self):
+        samples = []
+        for rg_id in self._rgs:
+            sample_field = self.bam_rg_field_for_vcf_sample
+            samples.append(self._rgs[rg_id][sample_field])
+        return samples
 
 
 class GenomeCoverages(object):
