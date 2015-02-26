@@ -27,8 +27,7 @@ from crumbs.bam.statistics import (count_reads, ReferenceStats, ReadStats,
                                    get_reference_counts,
                                    get_reference_counts_dict,
                                    get_genome_coverage, get_bam_readgroups,
-                                   mapped_count_by_rg, GenomeCoverages,
-                                   BamCoverages)
+                                   mapped_count_by_rg, BamCoverages)
 
 
 # pylint: disable=R0201

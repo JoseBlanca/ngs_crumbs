@@ -366,7 +366,8 @@ class BamCoverages(object):
             bam = AlignmentFile(bam_fpath)
             rgs_ = get_bam_readgroups(bam)
             if rgs_ is None:
-                rgs_ = []
+                rgs_ = [{'ID': None,
+                         self.bam_rg_field_for_vcf_sample: str(None)}]
             bams.append({'bam': bam, 'rgs': rgs_})
             for read_group in rgs_:
                 read_group['bam'] = idx
@@ -389,7 +390,7 @@ class BamCoverages(object):
 
             n_rgs = len(bam['rgs'])
             if not n_rgs:
-                sample = None
+                sample = str(None)
             elif n_rgs == 1:
                 sample_field = self.bam_rg_field_for_vcf_sample
                 sample = bam['rgs'][0][sample_field]
