@@ -379,8 +379,7 @@ class BamCoverages(object):
         ref_lens = {ref: le_ for ref, le_ in zip(bam.references, bam.lengths)}
         self._ref_lens = ref_lens
 
-    def _count_reads_in_column(self, column, min_mapq, bam):
-        # do I know the sample without taking a look at the read?
+    def _if_one_sample_get_it(self, bam):
         n_rgs = len(bam['rgs'])
         if not n_rgs:
             sample = str(None)
@@ -391,6 +390,11 @@ class BamCoverages(object):
             one_sample = True
         else:
             one_sample = False
+            sample = None
+        return one_sample, sample
+
+    def _count_reads_in_column(self, column, min_mapq, one_sample, sample):
+        # do I know the sample without taking a look at the read?
 
         if one_sample and not min_mapq:
             return {sample: column.n}
@@ -430,9 +434,10 @@ class BamCoverages(object):
                                         end=end,
                                         stepper=self.bam_pileup_stepper,
                                         truncate=True)
+            one_sample, sample = self._if_one_sample_get_it(bam)
             for column in columns:
                 reads.update(self._count_reads_in_column(column, min_mapq,
-                                                         bam))
+                                                         one_sample, sample))
 
         cache[(chrom, pos)] = reads
         return reads
@@ -468,9 +473,10 @@ class BamCoverages(object):
             columns = bam['bam'].pileup(reference=chrom, start=start, end=end,
                                         stepper=self.bam_pileup_stepper,
                                         truncate=True)
+            one_sample, sample = self._if_one_sample_get_it(bam)
             for column in columns:
                 col_counts = self._count_reads_in_column(column, min_mapq,
-                                                         bam)
+                                                         one_sample, sample)
                 for sample, sample_cov in col_counts.items():
                     covs[sample][sample_cov] += 1
         return covs
