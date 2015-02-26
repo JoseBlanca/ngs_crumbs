@@ -365,6 +365,8 @@ class BamCoverages(object):
         for idx, bam_fpath in enumerate(bam_fpaths):
             bam = AlignmentFile(bam_fpath)
             rgs_ = get_bam_readgroups(bam)
+            if rgs_ is None:
+                rgs_ = []
             bams.append({'bam': bam, 'rgs': rgs_})
             for read_group in rgs_:
                 read_group['bam'] = idx
@@ -376,7 +378,7 @@ class BamCoverages(object):
         ref_lens = {ref: le_ for ref, le_ in zip(bam.references, bam.lengths)}
         self._ref_lens = ref_lens
 
-    def _count_reads_in_column(self, column, min_mapq):
+    def _count_reads_in_column(self, column, min_mapq, bam):
         reads = Counter()
         for pileup_read in column.pileups:
             alig_read = pileup_read.alignment
@@ -385,13 +387,20 @@ class BamCoverages(object):
                 if read_mapq < min_mapq:
                     continue
 
-            rg_id = [tag[1] for tag in alig_read.tags if tag[0] == 'RG']
-            if not rg_id:
+            n_rgs = len(bam['rgs'])
+            if not n_rgs:
                 sample = None
-            else:
-                rg_id = rg_id[0]
+            elif n_rgs == 1:
                 sample_field = self.bam_rg_field_for_vcf_sample
-                sample = self._rgs[rg_id][sample_field]
+                sample = bam['rgs'][0][sample_field]
+            else:
+                rg_id = [tag[1] for tag in alig_read.tags if tag[0] == 'RG']
+                if not rg_id:
+                    sample = None
+                else:
+                    rg_id = rg_id[0]
+                    sample_field = self.bam_rg_field_for_vcf_sample
+                    sample = self._rgs[rg_id][sample_field]
             reads[sample] += 1
         return reads
 
@@ -410,7 +419,8 @@ class BamCoverages(object):
                                         stepper=self.bam_pileup_stepper,
                                         truncate=True)
             for column in columns:
-                reads.update(self._count_reads_in_column(column, min_mapq))
+                reads.update(self._count_reads_in_column(column, min_mapq,
+                                                         bam))
 
         cache[(chrom, pos)] = reads
         return reads
@@ -446,7 +456,8 @@ class BamCoverages(object):
                                         stepper=self.bam_pileup_stepper,
                                         truncate=True)
             for column in columns:
-                col_counts = self._count_reads_in_column(column, min_mapq)
+                col_counts = self._count_reads_in_column(column, min_mapq,
+                                                         bam)
                 for sample, sample_cov in col_counts.items():
                     covs[sample][sample_cov] += 1
         return covs
