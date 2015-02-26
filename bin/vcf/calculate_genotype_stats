@@ -23,8 +23,7 @@ import sys
 import argparse
 
 from crumbs.statistics import IntCounter
-from crumbs.vcf.statistics import get_call_data, get_snpcaller_name, GQ
-from crumbs.utils.optional_modules import Reader
+from crumbs.vcf.snv import VCFReader
 
 
 def _setup_argparse():
@@ -59,16 +58,15 @@ def _parse_args(parser):
 def main():
     parser = _setup_argparse()
     args = _parse_args(parser)
-    reader = Reader(args['in_fhand'])
-    vcf_variant = get_snpcaller_name(reader)
+    reader = VCFReader(args['in_fhand'])
     gq_threshold = args['gq_threshold']
     geno_stats_by_sample = IntCounter()
     called_stats = IntCounter()
-    for record in reader:
 
+    for snv in reader.parse_snvs():
         num_called = 0
-        for call in record.samples:
-            gq = get_call_data(call, vcf_variant=vcf_variant)[GQ]
+        for call in snv.calls:
+            gq = call.gt_qual
             if gq > gq_threshold and call.called:
                 geno_stats_by_sample[call.sample] += 1
                 num_called += 1
