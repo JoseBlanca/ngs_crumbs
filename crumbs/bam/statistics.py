@@ -503,47 +503,6 @@ class BamCoverages(object):
         return samples
 
 
-class GenomeCoverages(object):
-    def __init__(self, bam_fhands, mapqs=MAPQS_TO_CALCULATE):
-        self._bams = [AlignmentFile(bam_fhand.name) for bam_fhand in bam_fhands]
-        self.mapqs_to_calculate = mapqs
-        self.rgs = get_rgs_from_samfiles(self._bams)
-        self._counters = {}
-        for sample in self.samples:
-            self._counters[sample] = {mapq: IntCounter() for mapq in mapqs}
-        self._calculate()
-
-    def __len__(self):
-        return len([c for sample in self.samples for c in self._counters[sample].values()])
-
-    def _calculate(self):
-        for samfile in self._bams:
-            for column in samfile.pileup(stepper='all', max_depth=100000):
-                self._add(column)
-
-    def _add(self, column):
-        rgs = self.rgs
-        column_coverages = {rg['SM']: Counter()for rg in rgs.values()}
-        for pileup_read in column.pileups:
-            alignment = pileup_read.alignment
-            read_mapq = alignment.mapq
-            rg = [tag[1] for tag in alignment.tags if tag[0] == 'RG']
-            sample = rgs[rg[0]]['SM'] if rg else None
-            for mapq_to_calc in self.mapqs_to_calculate:
-                if read_mapq > mapq_to_calc:
-                    column_coverages[sample][mapq_to_calc] += 1
-        for sample, counts in column_coverages.items():
-            for map_to_calc, count in counts.items():
-                self._counters[sample][map_to_calc][count] += 1
-
-    def get_per_sample_mapq_counters(self, sample):
-        return self._counters.get(sample, None)
-
-    @property
-    def samples(self):
-        return list(set([rg['SM'] for rg in self.rgs.values()]))
-
-
 def get_genome_coverage(bam_fhands):
     coverage_hist = IntCounter()
     for bam_fhand in bam_fhands:
