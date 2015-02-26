@@ -451,6 +451,7 @@ class BamCoverages(object):
 
         min_mapq = self.min_mapq
         covs = {sample: IntCounter() for sample in self.samples}
+        covs[None] = IntCounter()
         for bam in self._bams:
             columns = bam['bam'].pileup(reference=chrom, start=start, end=end,
                                         stepper=self.bam_pileup_stepper,
