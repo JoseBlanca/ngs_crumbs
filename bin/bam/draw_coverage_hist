@@ -34,7 +34,9 @@ PLOTS_PER_CHAR = 3
 def _setup_argparse():
     'It returns the argument parser'
     description = 'Draw coverage histogram'
-    parser = argparse.ArgumentParser(description=description)
+    epilog = 'WARNING: It will be 10 times faster if bams with only one read'
+    epilog += ' group are used and min_mapq is not used'
+    parser = argparse.ArgumentParser(description=description, epilog=epilog)
     parser.add_argument('input', help='BAM or SAM file to process',
                         type=argparse.FileType('rt'), nargs='*')
     parser.add_argument('-p', '--plotfile', required=True,
