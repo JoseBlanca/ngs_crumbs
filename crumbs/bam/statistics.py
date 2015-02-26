@@ -380,6 +380,21 @@ class BamCoverages(object):
         self._ref_lens = ref_lens
 
     def _count_reads_in_column(self, column, min_mapq, bam):
+        # do I know the sample without taking a look at the read?
+        n_rgs = len(bam['rgs'])
+        if not n_rgs:
+            sample = str(None)
+            one_sample = True
+        elif n_rgs == 1:
+            sample_field = self.bam_rg_field_for_vcf_sample
+            sample = bam['rgs'][0][sample_field]
+            one_sample = True
+        else:
+            one_sample = False
+
+        if one_sample and not min_mapq:
+            return {sample: column.n}
+
         reads = Counter()
         for pileup_read in column.pileups:
             alig_read = pileup_read.alignment
@@ -388,13 +403,8 @@ class BamCoverages(object):
                 if read_mapq < min_mapq:
                     continue
 
-            n_rgs = len(bam['rgs'])
-            if not n_rgs:
-                sample = str(None)
-            elif n_rgs == 1:
-                sample_field = self.bam_rg_field_for_vcf_sample
-                sample = bam['rgs'][0][sample_field]
-            else:
+            # we have to look in the read group to know the sample
+            if not one_sample:
                 rg_id = [tag[1] for tag in alig_read.tags if tag[0] == 'RG']
                 if not rg_id:
                     sample = None
@@ -402,6 +412,7 @@ class BamCoverages(object):
                     rg_id = rg_id[0]
                     sample_field = self.bam_rg_field_for_vcf_sample
                     sample = self._rgs[rg_id][sample_field]
+
             reads[sample] += 1
         return reads
 
