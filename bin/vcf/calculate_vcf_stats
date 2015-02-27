@@ -634,12 +634,14 @@ def main():
     if len(vcf_stats.samples) >= vcf_stats.min_calls_for_pop_stats:
         draw_het_by_snp(vcf_stats, out_dir)
     draw_gt_depths(vcf_stats, out_dir)
-    draw_quals_vs_depth(vcf_stats, out_dir)
+
     draw_gt_hist_vs_allele_counts(vcf_stats, out_dir)
     draw_snv_densities(vcf_stats, out_dir)
     draw_maf_and_mac(vcf_stats, out_dir)
-    draw_gt_quals(vcf_stats, out_dir)
     draw_call_density(vcf_stats, out_dir)
+    draw_gt_quals(vcf_stats, out_dir)
+    draw_quals_vs_depth(vcf_stats, out_dir)
+
 
 if __name__ == '__main__':
     main()
