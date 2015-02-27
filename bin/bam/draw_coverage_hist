@@ -24,7 +24,7 @@ import sys
 from collections import Counter
 
 from crumbs.utils.bin_utils import main, build_version_msg
-from crumbs.bam.statistics import BamCoverages
+from crumbs.bam.statistics import BamCoverages1, BamCoverages2
 from crumbs.plot import draw_histograms
 
 COVERAGE_RANGE = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 75, 100)
@@ -57,6 +57,9 @@ def _setup_argparse():
                         version=build_version_msg())
     parser.add_argument('-q', '--min_mapq', type=int, default=0,
                         help='min. MAPQ to consider')
+    parser.add_argument('-e', '--min_phred', type=int, default=0,
+                        help='min. prhed seq quality to consider')
+
     return parser
 
 
@@ -73,7 +76,8 @@ def _parse_args(parser):
     min_mapq = parsed_args.min_mapq
     return {'in_fhands': in_fhands, 'out_fhand': out_fhand, 'ylimits': ylimits,
             'xlim_left': xlim_left, 'xlim_rigth': xlim_rigth,
-            'min_mapq': min_mapq, 'plot_fhand': plot_fhand}
+            'min_mapq': min_mapq, 'plot_fhand': plot_fhand,
+            'min_phred': parsed_args.min_phred}
 
 
 def run():
@@ -82,10 +86,14 @@ def run():
     args = _parse_args(parser)
 
     min_mapq = args['min_mapq']
+    min_phred = args['min_phred']
 
-    bam_coverages = BamCoverages([fhand.name for fhand in args['in_fhands']],
-                                 window=1, sampling_win_step=1,
-                                 min_mapq=min_mapq)
+    fhands = [fhand.name for fhand in args['in_fhands']]
+    if min_mapq:
+        bam_coverages = BamCoverages1(fhands, min_mapq=min_mapq,
+                                      min_phred=min_phred)
+    else:
+        bam_coverages = BamCoverages2(fhands)
     coverages = bam_coverages.calculate_coverage_distrib_in_region()
     samples = bam_coverages.samples
 

@@ -20,7 +20,7 @@ from subprocess import Popen, PIPE
 from operator import itemgetter
 from itertools import izip
 from array import array
-from collections import Counter
+from collections import Counter, OrderedDict
 import random
 
 from crumbs.utils.optional_modules import (histogram, zeros, median,
@@ -34,7 +34,7 @@ from crumbs.settings import get_setting
 from crumbs.bam.flag import SAM_FLAG_BINARIES, SAM_FLAGS
 from crumbs.utils.bin_utils import get_binary_path
 from crumbs.collectionz import RecentlyAddedCache
-from crumbs.iterutils import generate_windows
+from crumbs.iterutils import generate_windows, RandomAccessIterator
 
 
 # pylint: disable=C0111
@@ -344,7 +344,7 @@ def calculate_window(start, end, window_len, seq_len):
     return start, end
 
 
-class BamCoverages(object):
+class BamCoverages2(object):
     def __init__(self, bam_fpaths, min_mapq=None, window=1,
                  sampling_win_step=1,
                  bam_pileup_stepper='all', bam_rg_field_for_vcf_sample='SM'):
@@ -510,6 +510,111 @@ class BamCoverages(object):
                         counts[sample] = IntCounter()
                     counts[sample][int(round(cnts_in_win))] += 1
 
+        return counts
+
+    @property
+    def samples(self):
+        samples = []
+        for rg_id in self._rgs:
+            sample_field = self.bam_rg_field_for_vcf_sample
+            samples.append(self._rgs[rg_id][sample_field])
+        return samples
+
+
+class BamCoverages1(object):
+    def __init__(self, bam_fpaths, min_mapq=None, min_phred=None,
+                 bam_rg_field_for_vcf_sample='SM', max_coverage=100000):
+        self.bam_fpaths = bam_fpaths
+        self.min_mapq = min_mapq
+        self.bam_rg_field_for_vcf_sample = bam_rg_field_for_vcf_sample
+        self.max_coverage = max_coverage
+        self.min_phred = min_phred
+        self._prepare_bams(bam_fpaths)
+
+    def _prepare_bams(self, bam_fpaths):
+        bams = []
+        rgs = {}
+        for idx, bam_fpath in enumerate(bam_fpaths):
+            bam = AlignmentFile(bam_fpath)
+            rgs_ = get_bam_readgroups(bam)
+            if rgs_ is None:
+                rgs_ = [{'ID': None,
+                         self.bam_rg_field_for_vcf_sample: str(None)}]
+            bams.append({'fpath': bam_fpath, 'rgs': rgs_})
+            for read_group in rgs_:
+                read_group['bam'] = idx
+                rgs[read_group['ID']] = read_group
+        self._bams = bams
+        self._rgs = rgs
+        # We have to assume that all bmas have the same references
+        ref_lens = {ref: le_ for ref, le_ in zip(bam.references, bam.lengths)}
+        self._ref_lens = ref_lens
+
+    def _get_coverages_in_bam_rg(self, region, bam, read_group, one_rg):
+        if region is not None:
+            chrom, start, end = region
+            region = chrom
+            if end and not start:
+                start = 0
+            if start:
+                start += 1
+                region += ':' + int(start)
+            if end:
+                end += 1
+                end += '-' + int(end)
+
+        rg_id = read_group['ID']
+        if not one_rg:
+            view = ['samtools', 'view', '-u', '-r', rg_id]
+            view.append(bam['fpath'])
+            if region:
+                view.append(region)
+
+        pileup = ['samtools', 'mpileup', '-B', '-d', str(self.max_coverage)]
+        if self.min_mapq:
+            pileup.extend(['-q', self.min_mapq])
+        if self.min_phred:
+            pileup.extend(['-Q', self.min_phred])
+        if one_rg:
+            if region:
+                pileup.extend(['-r', region])
+            pileup.append(bam['fpath'])
+        else:
+            pileup.append('-')
+
+        if one_rg:
+            process = Popen(pileup, stdout=PIPE, stderr=PIPE)
+        else:
+            view_process = Popen(view, stdout=PIPE)
+            process = Popen(pileup, stdin=view_process.stdout, stdout=PIPE,
+                            stderr=PIPE)
+            view_process.stdout.close()
+
+        for line in process.stdout:
+            items = line.split()
+            chrom, pos, cov = items[0], int(items[1]) - 1, int(items[3])
+            yield chrom, pos, cov
+
+    def _get_coverages_in_bam_rg_win(self, region, bam, read_group, one_rg):
+        coverages = self._get_coverages_in_bam_rg(region, bam, read_group, one_rg)
+        for chrom, pos, cov in coverages:
+            yield cov
+
+    def calculate_coverage_distrib_in_region(self, region=None):
+
+        counts = {}
+        for bam in self._bams:
+            one_rg = True if len(bam['rgs']) < 2 else False
+            for read_group in bam['rgs']:
+                sample_field = self.bam_rg_field_for_vcf_sample
+                sample = bam['rgs'][0][sample_field]
+
+                if sample not in counts:
+                    counts[sample] = IntCounter()
+                for cov in self._get_coverages_in_bam_rg_win(region, bam,
+                                                             read_group,
+                                                             one_rg):
+                    counts[sample][int(round(cov))] += 1
         return counts
 
     @property

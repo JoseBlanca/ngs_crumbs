@@ -27,7 +27,8 @@ from crumbs.bam.statistics import (count_reads, ReferenceStats, ReadStats,
                                    get_reference_counts,
                                    get_reference_counts_dict,
                                    get_genome_coverage, get_bam_readgroups,
-                                   mapped_count_by_rg, BamCoverages)
+                                   mapped_count_by_rg, BamCoverages1,
+                                   BamCoverages2)
 
 
 # pylint: disable=R0201
@@ -153,20 +154,29 @@ class GenomeCoverageTest(unittest.TestCase):
 
 
 class BamCoverageTest(unittest.TestCase):
-    def test_bam_coverage(self):
+    def test_bam_coverage1(self):
         bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
-        cov = BamCoverages([bam_fpath], sampling_win_step=1)
+        cov = BamCoverages1([bam_fpath])
         exp = {'group1+454': 9}
         assert cov._calculate_coverages_in_pos('reference1', 200) == exp
         res = cov.calculate_coverage_distrib_in_region(region=('reference1',
                                                                None, None))
         assert res['group1+454'] == {9: 73}
-        cov = BamCoverages([bam_fpath], window=2, sampling_win_step=1)
+
+    def test_bam_coverage2(self):
+        bam_fpath = os.path.join(TEST_DATA_DIR, 'seqs.bam')
+        cov = BamCoverages2([bam_fpath])
+        exp = {'group1+454': 9}
+        assert cov._calculate_coverages_in_pos('reference1', 200) == exp
+        res = cov.calculate_coverage_distrib_in_region(region=('reference1',
+                                                               None, None))
+        assert res['group1+454'] == {9: 73}
+        cov = BamCoverages2([bam_fpath], window=2)
         res = cov.calculate_coverage_distrib_in_region(region=('reference1',
                                                                None, None))
         assert res == {'group1+454': {9: 72, 5: 2}}
 
-        cov = BamCoverages([bam_fpath], window=21, sampling_win_step=10)
+        cov = BamCoverages2([bam_fpath], window=21, sampling_win_step=10)
         res = cov.calculate_coverage_distrib_in_region(region=('reference1',
                                                                None, None))
         assert res == {'group1+454': {9: 53, 3: 20, 6: 20}}
@@ -182,5 +192,5 @@ class BamCoverageTest(unittest.TestCase):
         # raw_input(out_fhand.name)
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'BamCoverageTest']
+    # import sys;sys.argv = ['', 'BamCoverageTest.test_bam_coverage']
     unittest.main()
