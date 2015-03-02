@@ -359,12 +359,12 @@ class ABCoder(object):
         for idx, (snp, ab_genotype) in enumerate(snp_ab_genotypes):
             wins = self._create_windows(idx)
             for win in wins:
-                transpose here
+                #transpose here
                 for sample in samples:
-                    keep memory of the samples already smothed
+                    #keep memory of the samples already smothed
                     snps_in_win = snp_ab_genotypes[win[0]: win[1]]
                     print list(snps_in_win)
-                if all samples are smoothed break the win loop
+                #if all samples are smoothed break the win loop
             pass
 
     def _smooth_genotypes_old(self, snp_ab_genotypes, samples):
