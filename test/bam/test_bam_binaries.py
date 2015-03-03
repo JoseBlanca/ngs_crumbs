@@ -15,7 +15,7 @@
 import unittest
 import os
 
-from subprocess import check_call, check_output
+from subprocess import check_call
 from tempfile import NamedTemporaryFile
 
 from crumbs.utils.bin_utils import BAM_BIN_DIR

@@ -17,7 +17,7 @@ from crumbs.plot import get_fig_and_canvas
 from crumbs.vcf.snv import VCFReader
 from crumbs.utils.optional_modules import Figure, FigureCanvas
 
-FILTER_ALLELES_GT = None    # it could be an integer, i.e. 1 to keep only the
+FILTER_ALLELES_GT = None  # it could be an integer, i.e. 1 to keep only the
                             # 2 parental alleles in a F2
 
 REFERENCE = 'Reference'

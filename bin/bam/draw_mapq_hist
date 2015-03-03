@@ -68,9 +68,8 @@ def run():
     distrib = mapq_counter.calculate_distribution()
 
     if not args['ascii_output']:
-        draw_histogram_in_fhand(distrib['counts'],
-                                bin_limits=distrib['bin_limits'],
-                                fhand=out_fhand, title='Mapq distribution',
+        draw_histogram_in_fhand(mapq_counter, fhand=out_fhand,
+                                title='Mapq distribution',
                                 ylabel="Num. Seqs", xlabel="Mapq")
     else:
         out_fhand.write('\n')

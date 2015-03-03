@@ -148,7 +148,7 @@ def choose_samples(record, sample_names):
         chosen_samples = record.samples
     else:
         filter_by_name = lambda x: True if x.sample in sample_names else False
-        chosen_samples = filter(filter_by_name, record.samples, )
+        chosen_samples = filter(filter_by_name, record.samples,)
     return chosen_samples
 
 
