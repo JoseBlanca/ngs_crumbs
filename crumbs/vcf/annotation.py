@@ -30,10 +30,11 @@ from crumbs.utils.optional_modules import (parse_into_seqrecs, seq_index,
                                            Analysis, Figure)
 from crumbs.settings import get_setting
 from crumbs.vcf.filters import _print_figure
-from crumbs.statistics import calculate_dust_score
+from crumbs.statistics import calculate_dust_score, IntCounter
 from crumbs.utils.tags import SEQRECORD
 from crumbs.seq.seq import SeqWrapper
-from crumbs.bam.statistics import calculate_window
+from crumbs.bam.statistics import calculate_window, BamCoverages2
+from crumbs.plot import draw_histograms, HistogramPlotter, LINE
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
 # Missing docstring
@@ -946,6 +947,59 @@ class LowComplexityRegionAnnotator(BaseAnnotator):
     @property
     def description(self):
         return "SNV is located in a low complexity region"
+
+    @property
+    def item_wise(self):
+        return True
+
+
+class HihgCoverageRegionAnnotator(BaseAnnotator):
+    def __init__(self, bam_fpaths, coverage_threshold, window, min_mapq=None):
+        self._coverage_threshold = coverage_threshold
+        self._window = window
+        self._min_mapq = min_mapq
+        self._bam_coverage = BamCoverages2(bam_fpaths, min_mapq=min_mapq,
+                                           window=window)
+        self._scores = {samp: IntCounter()
+                        for samp in self._bam_coverage.samples}
+
+    def __call__(self, snv):
+        coverages = self._bam_coverage.calculate_coverage_in_pos(snv.chrom,
+                                                                 snv.pos)
+        for sample, coverage in coverages.items():
+            self._scores[sample][coverage] += 1
+        mean_coverage = sum(coverages.values()) / len(coverages)
+        if mean_coverage > self._coverage_threshold:
+            snv.add_filter(self.name)
+
+        if self.return_modified_snv:
+            return snv
+
+    def draw_hist(self, fhand):
+        scores = self._scores
+        titles = ['aaaa'] * len(scores)
+        plots_per_chart = 3
+        num_cols = 2 if len(scores) > plots_per_chart else 1
+        plot = HistogramPlotter(scores.values(), ylabel='Num. SNPs',
+                                xlabel='Coverage', titles=titles, kind=LINE,
+                                distrib_labels=scores.keys(),
+                                num_cols=num_cols,
+                                plots_per_chart=plots_per_chart)
+        for axe in plot.axes:
+            axe.axvline(self._coverage_threshold)
+        plot.write_figure(fhand)
+
+    @property
+    def name(self):
+        return 'hcr'
+
+    @property
+    def is_filter(self):
+        return True
+
+    @property
+    def description(self):
+        return "SNV is located in a high coverage region"
 
     @property
     def item_wise(self):

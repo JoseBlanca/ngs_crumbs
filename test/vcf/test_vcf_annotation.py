@@ -28,7 +28,8 @@ from crumbs.vcf.annotation import (CloseToSnv, HighVariableRegion,
                                    IsVariableDepthAnnotator,
                                    AminoSeverityChangeAnnotator,
                                    HeterozigoteInSamples,
-                                   LowComplexityRegionAnnotator)
+                                   LowComplexityRegionAnnotator,
+                                   HihgCoverageRegionAnnotator)
 from crumbs.vcf.snv import VCFReader
 from crumbs.utils.file_utils import TemporaryDir
 
@@ -581,6 +582,50 @@ class TestComplexityAnnotator(unittest.TestCase):
         low_complexity.draw_hist(fhand)
 
 
+class HighCoverageRegionAnnotator(unittest.TestCase):
+    def test_high_coverage_region(self):
+        bam_fpath = join(TEST_DATA_DIR, 'seqs.bam')
+        annotator = HihgCoverageRegionAnnotator([bam_fpath],
+                                                coverage_threshold=5,
+                                                window=21)
+        snv = FakeClass()
+        snv.chrom = 'reference1'
+        snv.pos = 200
+        snv.filters = []
+        annotator(snv)
+        assert snv.filters == ['hcr']
+
+        annotator = HihgCoverageRegionAnnotator([bam_fpath],
+                                                coverage_threshold=10,
+                                                window=21)
+        snv = FakeClass()
+        snv.chrom = 'reference1'
+        snv.pos = 200
+        snv.filters = []
+        annotator(snv)
+        assert not snv.filters
+
+        annotator = HihgCoverageRegionAnnotator([bam_fpath],
+                                                coverage_threshold=10,
+                                                window=21)
+        for pos in range(189, 230):
+            snv = FakeClass()
+            snv.chrom = 'reference1'
+            snv.pos = pos
+            snv.filters = []
+            annotator(snv)
+        for pos in range(330, 400):
+            snv = FakeClass()
+            snv.chrom = 'reference2'
+            snv.pos = pos
+            snv.filters = []
+            annotator(snv)
+
+        with NamedTemporaryFile(suffix='.png') as fhand:
+            annotator.draw_hist(fhand)
+            # raw_input(fhand.name)
+
+
 class TestInfoMappers(unittest.TestCase):
 
     def test_hetegorigot_percent(self):
@@ -672,15 +717,15 @@ class BinaryTest(unittest.TestCase):
         tmp_dir = TemporaryDir()
         cmd = [binary, FREEBAYES3_VCF_PATH, '-f', config_fhand.name,
                '-p', tmp_dir.name]
-        #raw_input(' '.join(cmd))
+        # raw_input(' '.join(cmd))
         result = check_output(cmd)
         tmp_dir.close()
-        #print result
+        # print result
         assert 'cs60_0.70\t' in result
         assert 'CAP=MmeI' in result
         assert 'HIS1=True' in result
         assert '\tPASS\t' in result
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'BinaryTest']
+    # import sys;sys.argv = ['', 'HighCoverageRegionAnnotator']
     unittest.main()
