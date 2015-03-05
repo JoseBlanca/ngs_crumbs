@@ -57,7 +57,7 @@ def get_fig_and_canvas(num_rows=1, num_cols=1, figsize=None):
 
 
 class HistogramPlotter(object):
-    def __init__(self, counters, plots_per_chart=1, kind=BAR, num_cols=1,
+    def __init__(self, counters, plots_per_chart=1, kind=LINE, num_cols=1,
                  xlabel=None, ylabel=None, ylog_scale=False, ylimits=None,
                  distrib_labels=None, titles=None, xmax=None, xmin=None,
                  linestyles=None):

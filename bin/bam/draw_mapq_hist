@@ -23,7 +23,7 @@ from crumbs.utils.bin_utils import main, build_version_msg
 
 from crumbs.bam.statistics import ReadStats
 from crumbs.statistics import draw_histogram_ascii
-from crumbs.plot import draw_histogram_in_fhand
+from crumbs.plot import draw_histogram_in_fhand, BAR
 from crumbs.utils.optional_modules import AlignmentFile
 
 
@@ -65,13 +65,12 @@ def run():
     read_stats = ReadStats(bams)
     mapq_counter = read_stats.mapqs
 
-    distrib = mapq_counter.calculate_distribution()
-
     if not args['ascii_output']:
         draw_histogram_in_fhand(mapq_counter, fhand=out_fhand,
-                                title='Mapq distribution',
+                                title='Mapq distribution', kind=BAR,
                                 ylabel="Num. Seqs", xlabel="Mapq")
     else:
+        distrib = mapq_counter.calculate_distribution()
         out_fhand.write('\n')
         out_fhand.write('Distribution of coverages\n')
         out_fhand.write('-------------------------\n')
