@@ -119,7 +119,7 @@ class GenotypeFilterTests(unittest.TestCase):
                '-p', plot_fhand.name]
         check_call(cmd)
         assert './.:17:2' in open(out_fhand.name).read()
-        # raw_input(plot_fhand.name)
+        raw_input(plot_fhand.name)
 
 
 class LowQualAlleleTest(unittest.TestCase):

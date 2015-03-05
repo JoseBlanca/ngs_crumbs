@@ -61,19 +61,32 @@ class LowQualityGenotypeFilter(object):
 
     def __init__(self, min_qual):
         self._min_qual = min_qual
-        self._scores = IntCounter()
+        self._scores = {}
+        self._first_snv = True
 
     def __call__(self, snv):
+        if self._first_snv:
+            for call in snv.calls:
+                self._scores[call.sample] = IntCounter()
+            self._first_snv = False
+
         for call in snv.calls:
-            self._scores[call.gt_qual] += 1
+            if call.gt_qual is not None:
+                self._scores[call.sample][int(call.gt_qual)] += 1
         return snv.remove_gt_from_low_qual_calls(min_qual=self._min_qual)
 
     def draw_hist(self, fhand):
-        plot = HistogramPlotter([self._scores], xlabel='Genotype quality',
-                                ylabel='num genotypes',
-                                titles=['Genotype quality distribution'])
-        axe = plot.axes[0]
-        axe.axvline(self._min_qual, color='r')
+        counters = self._scores.values()
+        samples = self._scores.keys()
+        titles = ['Genotype quality distribution'] * len(counters)
+        plots_per_chart = 3
+        num_cols = 1 if len(counters) <= plots_per_chart else 2
+        plot = HistogramPlotter(counters, distrib_labels=samples,
+                                xlabel='Genotype quality', num_cols=num_cols,
+                                ylabel='num genotypes', titles=titles,
+                                plots_per_chart=plots_per_chart)
+        for axe in plot.axes:
+            axe.axvline(self._min_qual, linewidth=2, c='#FF8D00')
         plot.write_figure(fhand)
 
 

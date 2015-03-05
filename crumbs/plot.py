@@ -113,6 +113,9 @@ class HistogramPlotter(object):
                 axe.set_title(title + ' (NO DATA)')
                 return axe
             raise
+        if distrib is None:
+            axe.set_title(title + ' (NO DATA)')
+            return axe
 
         counts = distrib['counts']
         bin_limits = distrib['bin_limits']
