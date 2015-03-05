@@ -1,19 +1,21 @@
 TODO
 -----
 vcf : Look for all the .fetch_snvs and change it to use RandomAceesRegionIterator
- 		# TODO: Randon acess iterator based on physical distance
+         # TODO: Randon acess iterator based on physical distance
         # RandomAcessRegionIterator(items, location_getter)
 
+vcf: In the different filters, draw the distribution of the statistic used to filter and the threshold value used after filtering
+
 Remove the option to give fasta files when a bwa or bowtie2 index is required:
-	- add to bam_crumbs a crumb to create indexes in the designated direcotry
-	(by default the directory in which the fasta file is)?
-	- Remove the option and check that the index exists. Raise an error if a
-	fasta is given with no index.
+    - add to bam_crumbs a crumb to create indexes in the designated direcotry
+    (by default the directory in which the fasta file is)?
+    - Remove the option and check that the index exists. Raise an error if a
+    fasta is given with no index.
 
 Create functions to reverse and complement sequence objects:
-	- check that there are no functions already in place
-	- create the functions in seq.py
-	- remove the _reverse and _complementary functions from mapping.py
+    - check that there are no functions already in place
+    - create the functions in seq.py
+    - remove the _reverse and _complementary functions from mapping.py
 
 Take a look at kraken: http://www.ebi.ac.uk/research/enright/software/kraken
 Reaper + Tally + Minion
@@ -47,8 +49,8 @@ How to do it:
     3.2 Triming binaries should have an orphan option
 
 Performance
-	1. compare with prinseq
-	2. Is one fat cleaner (qual + length trimming) faster than two piped crumbs?
+    1. compare with prinseq
+    2. Is one fat cleaner (qual + length trimming) faster than two piped crumbs?
 
 Add fast fastq parsing:
 There's code for fast parsing in:
@@ -163,4 +165,3 @@ Módulos relacionados con ld en tassel (puede haber más):
 src/net/maizegenetics/pal/popgen/DiversityAnalyses.java
 src/net/maizegenetics/pal/popgen/LinkageDisequilibrium.java
 La clave está en la función getLDForSitePair
-
