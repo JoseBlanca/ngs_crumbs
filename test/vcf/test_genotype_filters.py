@@ -113,10 +113,13 @@ class GenotypeFilterTests(unittest.TestCase):
         in_fhand.write(VCF_HEADER + vcf)
         in_fhand.flush()
         out_fhand = NamedTemporaryFile()
+        plot_fhand = NamedTemporaryFile()
         binary = os.path.join(VCF_BIN_DIR, 'filter_low_qual_genotypes')
-        cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-m', '20']
+        cmd = [binary, in_fhand.name, '-o', out_fhand.name, '-m', '20',
+               '-p', plot_fhand.name]
         check_call(cmd)
         assert './.:17:2' in open(out_fhand.name).read()
+        # raw_input(plot_fhand.name)
 
 
 class LowQualAlleleTest(unittest.TestCase):

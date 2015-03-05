@@ -14,10 +14,13 @@
 # along with ngs_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+import os.path
 from collections import Counter
 from StringIO import StringIO
 
 from crumbs.vcf.snv import VCFReader, VCFWriter
+from crumbs.statistics import IntCounter
+from crumbs.plot import HistogramPlotter
 
 # Missing docstring
 # pylint: disable=C0111
@@ -29,7 +32,8 @@ HW = 'hw'
 RIL_SELF = 'ril_self'
 
 
-def run_genotype_filters(in_fhand, out_fhand, gt_filters, reader_kwargs=None):
+def run_genotype_filters(in_fhand, out_fhand, gt_filters, plots_dir=None,
+                         reader_kwargs=None):
     if reader_kwargs is None:
         reader_kwargs = {}
 
@@ -57,9 +61,20 @@ class LowQualityGenotypeFilter(object):
 
     def __init__(self, min_qual):
         self._min_qual = min_qual
+        self._scores = IntCounter()
 
     def __call__(self, snv):
+        for call in snv.calls:
+            self._scores[call.gt_qual] += 1
         return snv.remove_gt_from_low_qual_calls(min_qual=self._min_qual)
+
+    def draw_hist(self, fhand):
+        plot = HistogramPlotter([self._scores], xlabel='Genotype quality',
+                                ylabel='num genotypes',
+                                titles=['Genotype quality distribution'])
+        axe = plot.axes[0]
+        axe.axvline(self._min_qual, color='r')
+        plot.write_figure(fhand)
 
 
 class HetGenotypeFilter(object):
@@ -83,7 +98,7 @@ def _prob_aa_ril_self(n_generation):
     if n_generation in RIL_FREQ_AA_CACHE:
         return RIL_FREQ_AA_CACHE[n_generation]
 
-    freq_aa = (2**n_generation - 1) / 2 ** (n_generation + 1)
+    freq_aa = (2 ** n_generation - 1) / 2 ** (n_generation + 1)
     RIL_FREQ_AA_CACHE[n_generation] = freq_aa
     return freq_aa
 

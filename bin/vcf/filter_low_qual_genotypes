@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with seq_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+
 from crumbs.vcf.utils.bin_utils import (setup_basic_argparse,
                                         parse_basic_args)
 from crumbs.vcf.genotype_filters import (LowQualityGenotypeFilter,
@@ -27,14 +29,19 @@ def main():
     description = 'It removes the genotypes of the low quality snvs'
     parser = setup_basic_argparse(description=description)
     parser.add_argument('-m', '--min_qual', type=int, default=MIN_QUAL)
-
+    parser.add_argument('-p', '--plot_file', type=argparse.FileType('w'),
+                        help='Directory to write the plots')
     args, parsed_args = parse_basic_args(parser)
-    args['min_qual'] = parsed_args.min_qual
 
-    gt_filters = [LowQualityGenotypeFilter(min_qual=args['min_qual'])]
+    min_qual = parsed_args.min_qual
+    plot_fhand = parsed_args.plot_file
+
+    low_qual_filter = LowQualityGenotypeFilter(min_qual=min_qual)
+
     run_genotype_filters(args['in_fhand'], args['out_fhand'],
-                         gt_filters=gt_filters)
-
+                         gt_filters=[low_qual_filter])
+    if plot_fhand:
+        low_qual_filter.draw_hist(plot_fhand)
 
 if __name__ == '__main__':
     main()
