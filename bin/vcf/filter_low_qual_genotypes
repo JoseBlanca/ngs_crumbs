@@ -28,7 +28,8 @@ MIN_QUAL = 100
 def main():
     description = 'It removes the genotypes of the low quality snvs'
     parser = setup_basic_argparse(description=description)
-    parser.add_argument('-m', '--min_qual', type=int, default=MIN_QUAL)
+    parser.add_argument('-m', '--min_qual', type=int, default=MIN_QUAL,
+                        help='default: %(default)s')
     parser.add_argument('-p', '--plot_file', type=argparse.FileType('w'),
                         help='Directory to write the plots')
     args, parsed_args = parse_basic_args(parser)
