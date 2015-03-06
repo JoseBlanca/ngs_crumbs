@@ -222,11 +222,11 @@ class HistogramPlotter(object):
 
 def draw_histogram_in_fhand(counter, fhand, title=None, xlabel=None, xmin=None,
                             xmax=None, ylabel=None, kind=BAR, ylimits=None,
-                            ylog_scale=False):
+                            ylog_scale=False, figsize=None):
     'It draws an histogram and if the fhand is given it saves it'
     plot_hist = HistogramPlotter([counter], xlabel=xlabel, ylabel=ylabel,
                                  xmax=xmax, xmin=xmin, titles=[title],
-                                 ylimits=ylimits)
+                                 ylimits=ylimits, kind=kind, figsize=None)
     plot_hist.write_figure(fhand)
 
 
