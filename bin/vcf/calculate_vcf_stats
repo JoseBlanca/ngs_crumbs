@@ -66,13 +66,11 @@ def _parse_args(parser):
 
 def draw_snv_densities(vcf_stats, out_dir):
     fhand = open(join(out_dir, 'snv_densities_distrib.png'), 'w')
-    density_counter = vcf_stats.snv_density
-    distrib = density_counter.calculate_distribution()
+    counter = vcf_stats.snv_density
     xlabel = 'Num. of snvs in a {} pb window'
-    draw_histogram_in_fhand(distrib['counts'], distrib['bin_limits'],
-                            title='SNV densities distribution',
+    draw_histogram_in_fhand(counter, fhand, title='SNV densities distribution',
                             xlabel=xlabel.format(WINDOWS_SIZE * 2),
-                            ylabel='Num. SNVs', fhand=fhand)
+                            ylabel='Num. SNVs')
 
 
 def draw_mafs(vcf_stats, out_dir, maf_kind):
@@ -105,17 +103,11 @@ def draw_mafs(vcf_stats, out_dir, maf_kind):
     # all_together
     # Only draw graphs if there is data
     if len(vcf_stats.samples) > DEF_MIN_CALLS_FOR_POP_STATS:
-        try:
-            distrib = maf_method().calculate_distribution()
-        except RuntimeError as error:
-            assert str(error) == 'No items in IntCounter'
-            distrib = {'counts': [], 'bin_limits': []}
-
+        counter = maf_method()
         fhand = open(join(out_dir, fbases[maf_kind] + 'all_samples.png'), 'w')
         title = name + ' distribution. All samples'
-        draw_histogram_in_fhand(distrib['counts'], distrib['bin_limits'],
-                                title=title, xlabel=xlabel, ylabel=ylabel,
-                                fhand=fhand, kind=LINE)
+        draw_histogram_in_fhand(counter, fhand, title=title, xlabel=xlabel,
+                                ylabel=ylabel, kind=LINE)
 
 
 def draw_maf_and_mac(vcf_stats, out_dir):
@@ -130,14 +122,12 @@ def grouper(n, iterable, padvalue=None):
 
 def draw_snv_depth(vcf_stats, out_dir):
     fhand = open(join(out_dir, 'snv_coverages_distrib.png'), 'w')
-    distrib = vcf_stats.depths.calculate_distribution()
-    counts = distrib['counts']
-    bin_limits = distrib['bin_limits']
+    counter = vcf_stats.depths
     title = 'Snv Coverage distribution'
     xlabel = 'Coverage'
     ylabel = 'Num. Snvs'
-    draw_histogram_in_fhand(counts, bin_limits, title=title, xlabel=xlabel,
-                            ylabel=ylabel, fhand=fhand, kind=LINE)
+    draw_histogram_in_fhand(counter, fhand, title=title, xlabel=xlabel,
+                            ylabel=ylabel, kind=LINE)
 
 
 def draw_gt_depths(vcf_stats, out_dir, gq_threshold=None):
