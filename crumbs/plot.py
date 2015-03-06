@@ -60,7 +60,7 @@ class HistogramPlotter(object):
     def __init__(self, counters, plots_per_chart=1, kind=LINE, num_cols=1,
                  xlabel=None, ylabel=None, ylog_scale=False, ylimits=None,
                  distrib_labels=None, titles=None, xmax=None, xmin=None,
-                 linestyles=None):
+                 linestyles=None, figsize=None):
         if plots_per_chart > 1 and kind == BAR:
             error_msg = 'if kind is BAR only one plot per chart is allowed'
             raise ValueError(error_msg)
@@ -73,7 +73,8 @@ class HistogramPlotter(object):
         self.ylabel = ylabel
         self.num_plots, self.num_rows = self._get_plot_dimensions()
         fig, canvas = get_fig_and_canvas(num_rows=self.num_rows,
-                                         num_cols=self.num_cols)
+                                         num_cols=self.num_cols,
+                                         figsize=figsize)
         self.figure = fig
         self.canvas = canvas
         axes = self._draw_plot(distrib_labels=distrib_labels, ylimits=ylimits,

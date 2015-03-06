@@ -28,7 +28,7 @@ from crumbs.vcf.snv import (HET, HOM, HOM_ALT, HOM_REF,
                             DEF_MIN_CALLS_FOR_POP_STATS)
 from crumbs.plot import (draw_histogram_in_fhand, draw_histograms, LINE,
                          get_fig_and_canvas, draw_int_boxplot,
-                         draw_histogram_in_axes, BAR)
+                         BAR, HistogramPlotter)
 from crumbs.utils.optional_modules import (griddata, cm, make_axes, Colorbar,
                                            ScalarFormatter, linspace)
 PLOTS_PER_CHART = 3
@@ -399,68 +399,55 @@ def draw_gt_hist_vs_allele_counts(vcf_stats, out_dir):
 
 def draw_quals_vs_depth(vcf_stats, out_dir):
 
-    fig, canvas = get_fig_and_canvas(num_rows=3, figsize=(15, 30))
-
-    axes = fig.add_subplot(211)
+    gt_depth_counters = []
     if vcf_stats.gt_depths_by_gt_and_qual[HOM]:
-        draw_int_boxplot(vcf_stats.gt_depths_by_gt_and_qual[HOM], axes=axes,
-                      title='Genotype Qual. distribs vs Genotype Depth (HOMO)',
-                         ylabel='Genotype Quality', xlabel='Genoype Depth')
+        gt_depth_counters.append(vcf_stats.gt_depths(HOM))
 
-        try:
-            distrib = vcf_stats.gt_depths(HOM).calculate_distribution(min_=1,
-                                                   max_=vcf_stats.dp_threshold)
-        except RuntimeError:
-            distrib = None
-        if distrib is not None:
-            axes2 = axes.twinx()
-            draw_histogram_in_axes(distrib['counts'], distrib['bin_limits'],
-                                   kind=LINE, axes=axes2,
-                                   ylabel='Num. Genotypes')
-
-    axes = fig.add_subplot(212)
     if vcf_stats.gt_depths_by_gt_and_qual[HET]:
-        draw_int_boxplot(vcf_stats.gt_depths_by_gt_and_qual[HET], axes=axes,
-                         title='Genotype Qual. distribs vs Genotype Depth (HET)',
-                         ylabel='Genotype Quality', xlabel='Genoype Depth')
+        gt_depth_counters.append(vcf_stats.gt_depths(HET))
 
-        try:
-            distrib = vcf_stats.gt_depths(HET).calculate_distribution(min_=1,
-                                                   max_=vcf_stats.dp_threshold)
-        except RuntimeError:
-            distrib = None
+    plot = HistogramPlotter(counters=gt_depth_counters, xlabel='Genoype Depth',
+                            xmax=vcf_stats.dp_threshold, figsize=(15, 30),
+                            ylabel='Num. Genotypes')
+    axe1, axe2 = plot.axes
+    if vcf_stats.gt_depths_by_gt_and_qual[HOM]:
 
-        if distrib is not None:
-            axes2 = axes.twinx()
-            draw_histogram_in_axes(distrib['counts'], distrib['bin_limits'],
-                                   kind=LINE, axes=axes2,
-                                   ylabel='Num. Genotypes')
+        axe12 = axe1.twinx()
+        axe12.yaxis.tick_left()
+        axe12.yaxis.set_label_position('left')
+        axe1.yaxis.tick_right()
+        axe1.yaxis.set_label_position('right')
+
+        title = 'Genotype Qual. distribs vs Genotype Depth (HOMO)'
+        draw_int_boxplot(vcf_stats.gt_depths_by_gt_and_qual[HOM], axes=axe12,
+                         title=title, ylabel='Genotype Quality')
+    if vcf_stats.gt_depths_by_gt_and_qual[HET]:
+        axe22 = axe2.twinx()
+        axe22.yaxis.tick_left()
+        axe22.yaxis.set_label_position('left')
+        axe2.yaxis.tick_right()
+        axe2.yaxis.set_label_position('right')
+
+        title = 'Genotype Qual. distribs vs Genotype Depth (HET)'
+        draw_int_boxplot(vcf_stats.gt_depths_by_gt_and_qual[HET], axes=axe22,
+                         title=title, ylabel='Genotype Quality')
 
     fhand = open(join(out_dir, 'gt_qual_distribs_vs_depth.png'), 'w')
-    canvas.print_figure(fhand)
-    fhand.flush()
+    plot.write_figure(fhand)
 
 
 def draw_het_by_snp(vcf_stats, out_dir):
-    title = 'Heterozigosity Distribution'
-    xlabel = '% heterozigote samples / called samples'
     ylabel = 'Num. SNVs'
+    counters = [vcf_stats.het_by_snp, vcf_stats.inbreeding_by_snp]
+    titles = ['Heterozigosity Distribution',
+              'Inbreeding Coef. (F) Distribution']
+    plot = HistogramPlotter(counters=counters, titles=titles, ylabel=ylabel)
 
-    fig, canvas = get_fig_and_canvas(num_rows=2)
-
-    distrib = vcf_stats.het_by_snp.calculate_distribution()
-    axes = fig.add_subplot(211)
-    draw_histogram_in_axes(distrib['counts'], distrib['bin_limits'],
-                           title=title, xlabel=xlabel, ylabel=ylabel,
-                           axes=axes)
-
-    distrib = vcf_stats.inbreeding_by_snp.calculate_distribution()
-    axes2 = fig.add_subplot(212)
-    title = 'Inbreeding Coef. (F) Distribution'
-    xlabel = '(1 - Hobs / H exp) * 100'
-    draw_histogram_in_axes(distrib['counts'], distrib['bin_limits'],
-                           axes=axes2, ylabel='Num. SNVs',
-                           title=title, xlabel=xlabel)
+    axes = plot.axes
+    axes1 = axes[0]
+    axes1.set_xlabel('% heterozigote samples / called samples')
+    axes2 = axes[1]
+    axes2.set_xlabel('(1 - Hobs / H exp) * 100')
 
     x_formatter = ScalarFormatter()
     x_formatter.set_powerlimits = (-3, 4)
@@ -469,8 +456,7 @@ def draw_het_by_snp(vcf_stats, out_dir):
         label.set_rotation(90)
 
     fhand = open(join(out_dir, 'heterozigosity_by_snv_distrib.png'), 'w')
-    canvas.print_figure(fhand)
-    fhand.flush()
+    plot.write_figure(fhand)
 
 
 def draw_per_sample_stats(vcf_stats, out_dir):
@@ -628,6 +614,7 @@ def main():
 
     vcf_stats = VcfStats(in_vcf_fpath, gq_threshold,
                          min_calls_for_pop_stats=min_samples)
+
     draw_missing_data(vcf_stats, out_dir)
     draw_per_sample_stats(vcf_stats, out_dir)
     draw_snv_depth(vcf_stats, out_dir)
