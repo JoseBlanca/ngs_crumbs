@@ -1,4 +1,8 @@
 TODO
+General
+-------
+Mirar subprocess32 y cambairlo en donde haga falta
+
 -----
 vcf : Look for all the .fetch_snvs and change it to use RandomAceesRegionIterator
          # TODO: Randon acess iterator based on physical distance
