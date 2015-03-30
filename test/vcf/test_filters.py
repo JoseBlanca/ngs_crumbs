@@ -71,7 +71,22 @@ VCF = '''#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT NA00001 NA00002 NA00003
 '''
 
 
+def filter_vcf(vcf_fhand, filter_):
+    snps = VCFReader(vcf_fhand, min_calls_for_pop_stats=1).parse_snvs()
+    packet = list(group_in_filter_packets(snps, 10))[0]
+    filtered_packet = filter_(packet)
+    return filtered_packet
+
+
+def eval_prop_in_packet(packet, prop):
+    eval_prop = lambda snps: [getattr(snp, prop)for snp in snps]
+    packet = {PASSED: eval_prop(packet[PASSED]),
+              FILTERED_OUT: eval_prop(packet[FILTERED_OUT])}
+    return packet
+
+
 class FiltersTest(unittest.TestCase):
+
     def test_group_in_filter_packets(self):
         items = list(range(10))
         packets = list(group_in_filter_packets(items, 4))
@@ -80,80 +95,63 @@ class FiltersTest(unittest.TestCase):
                {FILTERED_OUT: [], PASSED: (8, 9)}]
         assert res == packets
 
-    @staticmethod
-    def eval_prop_in_packet(packet, prop):
-        eval_prop = lambda snps: [getattr(snp, prop)for snp in snps]
-        packet = {PASSED: eval_prop(packet[PASSED]),
-                  FILTERED_OUT: eval_prop(packet[FILTERED_OUT])}
-        return packet
-
-    @staticmethod
-    def filter_vcf(vcf_fhand, filter_):
-        snps = VCFReader(vcf_fhand, min_calls_for_pop_stats=1).parse_snvs()
-        packet = list(group_in_filter_packets(snps, 10))[0]
-        filtered_packet = filter_(packet)
-        return filtered_packet
-
     def test_missing_genotypes(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=CallRateFilter(min_calls=2))
-        res = self.eval_prop_in_packet(packet, 'num_called')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=2))
+        res = eval_prop_in_packet(packet, 'num_called')
         expected = {FILTERED_OUT: [0, 1, 1, 1, 1], PASSED: [2, 2, 2, 2, 2]}
         assert res == expected
 
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=CallRateFilter(min_calls=1))
-        res = self.eval_prop_in_packet(packet, 'num_called')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=1))
+        res = eval_prop_in_packet(packet, 'num_called')
         expected = {FILTERED_OUT: [0], PASSED: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
         assert res == expected
 
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=CallRateFilter(min_calls=1,
-                                                        reverse=True))
-        res = self.eval_prop_in_packet(packet, 'num_called')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=1,
+                                                   reverse=True))
+        res = eval_prop_in_packet(packet, 'num_called')
         expected = {PASSED: [0], FILTERED_OUT: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
         assert res == expected
 
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=CallRateFilter(min_calls=3))
-        res = self.eval_prop_in_packet(packet, 'num_called')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=3))
+        res = eval_prop_in_packet(packet, 'num_called')
         expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
         assert res == expected
 
         # some samples
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=CallRateFilter(min_calls=2,
-                                        samples_to_consider=('pepo', 'mu16')))
-        res = self.eval_prop_in_packet(packet, 'num_called')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=2,
+                            samples_to_consider=('pepo', 'mu16')))
+        res = eval_prop_in_packet(packet, 'num_called')
         expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
         assert res == expected
 
     def test_biallelic(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=BiallelicFilter())
-        res = self.eval_prop_in_packet(packet, 'alleles')
+        packet = filter_vcf(open(VCF_PATH), filter_=BiallelicFilter())
+        res = eval_prop_in_packet(packet, 'alleles')
         assert not(res[FILTERED_OUT])
         assert len(res[PASSED]) == 10
 
-        packet = self.filter_vcf(open(VCF_INDEL_PATH),
-                                 filter_=BiallelicFilter())
-        res = self.eval_prop_in_packet(packet, 'alleles')
+        packet = filter_vcf(open(VCF_INDEL_PATH), filter_=BiallelicFilter())
+        res = eval_prop_in_packet(packet, 'alleles')
         assert len(res[FILTERED_OUT]) == 1
         assert len(res[PASSED]) == 6
 
         # test with only some samples
         kwargs = {'samples_to_consider': ('pepo', 'mu16')}
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=BiallelicFilter(**kwargs))
-        res = self.eval_prop_in_packet(packet, 'alleles')
+        packet = filter_vcf(open(VCF_PATH), filter_=BiallelicFilter(**kwargs))
+        res = eval_prop_in_packet(packet, 'alleles')
         assert not(res[FILTERED_OUT])
         assert len(res[PASSED]) == 10
 
         kwargs = {'samples_to_consider': ('pepo', 'mu16')}
-        packet = self.filter_vcf(open(VCF_INDEL_PATH),
-                                 filter_=BiallelicFilter(**kwargs))
+        packet = filter_vcf(open(VCF_INDEL_PATH),
+                            filter_=BiallelicFilter(**kwargs))
 
-        res = self.eval_prop_in_packet(packet, 'alleles')
+        res = eval_prop_in_packet(packet, 'alleles')
         assert len(res[PASSED]) == 7
 
     def test_monomorphic(self):
@@ -165,107 +163,115 @@ class FiltersTest(unittest.TestCase):
         '''
         fhand.write(VCF_HEADER + vcf)
         fhand.flush()
-        packet = self.filter_vcf(open(fhand.name),
-                                 filter_=MonomorphicFilter())
+        packet = filter_vcf(open(fhand.name),
+                            filter_=MonomorphicFilter())
         assert len(packet[PASSED]) == 2
         assert len(packet[FILTERED_OUT]) == 1
 
     def test_is_snp(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=IsSNPFilter())
-        res = self.eval_prop_in_packet(packet, 'is_snp')
-        assert not(res[FILTERED_OUT])
+        packet = filter_vcf(open(VCF_PATH), filter_=IsSNPFilter())
+        res = eval_prop_in_packet(packet, 'is_snp')
+        assert not res[FILTERED_OUT]
         assert res[PASSED] == [True] * 10
 
-        packet = self.filter_vcf(open(VCF_INDEL_PATH),
-                                 filter_=IsSNPFilter())
-        res = self.eval_prop_in_packet(packet, 'is_snp')
+        packet = filter_vcf(open(VCF_INDEL_PATH), filter_=IsSNPFilter())
+        res = eval_prop_in_packet(packet, 'is_snp')
         assert res[FILTERED_OUT] == [False] * 7
         assert not res[PASSED]
 
     def test_snv_qual(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=SnvQualFilter(20))
-        res = self.eval_prop_in_packet(packet, 'qual')
+        packet = filter_vcf(open(VCF_PATH), filter_=SnvQualFilter(20))
+        res = eval_prop_in_packet(packet, 'qual')
         assert res[FILTERED_OUT] == [None] * 10
         assert not res[PASSED]
 
         fpath = join(TEST_DATA_DIR, 'freebayes_al_depth.vcf')
-        packet = self.filter_vcf(open(fpath),
-                                 filter_=SnvQualFilter(1))
-        res = self.eval_prop_in_packet(packet, 'qual')
+        packet = filter_vcf(open(fpath), filter_=SnvQualFilter(1))
+        res = eval_prop_in_packet(packet, 'qual')
         assert len(res[FILTERED_OUT]) == 1
         assert len(res[PASSED]) == 4
 
         fpath = join(TEST_DATA_DIR, 'freebayes_al_depth.vcf')
-        packet = self.filter_vcf(open(fpath),
-                                 filter_=SnvQualFilter(1,
-                                            samples_to_consider=('1_14_1_gbs',
-                                                                 '1_17_1_gbs',
-                                                                '1_18_4_gbs')))
-        res = self.eval_prop_in_packet(packet, 'qual')
+        packet = filter_vcf(open(fpath), filter_=SnvQualFilter(1,
+                            samples_to_consider=('1_14_1_gbs', '1_17_1_gbs',
+                                                 '1_18_4_gbs')))
+        res = eval_prop_in_packet(packet, 'qual')
         assert len(res[FILTERED_OUT]) == 1
         assert len(res[PASSED]) == 4
 
-    def test_obs_het(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=ObsHetFilter(min_het=0.5))
-        res = self.eval_prop_in_packet(packet, 'obs_het')
-        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0]
-        assert res[PASSED] == [0.5, 1.0, 0.5]
-
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=ObsHetFilter(max_het=0.5))
-        res = self.eval_prop_in_packet(packet, 'obs_het')
-        assert res[FILTERED_OUT] == [None, 1.0]
-        assert res[PASSED] == [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0]
-
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=ObsHetFilter(min_het=0.1,
-                                                      max_het=0.9))
-        res = self.eval_prop_in_packet(packet, 'obs_het')
-        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, None, 1.0, 0.0, 0.0, 0.0]
-        assert res[PASSED] == [0.5, 0.5]
-
-        # some samples
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=ObsHetFilter(min_het=0.1,
-                                                      max_het=0.9,
-                                                      samples_to_consider=
-                                                      ('pepo', 'mu16')))
-        res = self.eval_prop_in_packet(packet, 'obs_het')
-        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, 0.5, None, 1.0, 0.5, 0.0,
-                                     0.0, 0.0]
-        assert res[PASSED] == []
-
     def test_maf(self):
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=MafFilter(min_maf=0.6))
-        res = self.eval_prop_in_packet(packet, 'maf')
+        packet = filter_vcf(open(VCF_PATH), filter_=MafFilter(min_maf=0.6))
+        res = eval_prop_in_packet(packet, 'maf')
         assert res[FILTERED_OUT] == [0.5, 0.5, 0.5, None, 0.5]
         assert res[PASSED] == [0.75, 0.75, 1.0, 1.0, 1.0]
 
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=MafFilter(max_maf=0.6))
-        res = self.eval_prop_in_packet(packet, 'maf')
+        packet = filter_vcf(open(VCF_PATH), filter_=MafFilter(max_maf=0.6))
+        res = eval_prop_in_packet(packet, 'maf')
         assert res[FILTERED_OUT] == [0.75, None, 0.75, 1.0, 1.0, 1.0]
         assert res[PASSED] == [0.5, 0.5, 0.5, 0.5]
 
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=MafFilter(min_maf=0.6, max_maf=0.8))
-        res = self.eval_prop_in_packet(packet, 'maf')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=MafFilter(min_maf=0.6, max_maf=0.8))
+        res = eval_prop_in_packet(packet, 'maf')
         assert res[FILTERED_OUT] == [0.5, 0.5, 0.5, None, 0.5, 1.0, 1.0, 1.0]
         assert res[PASSED] == [0.75, 0.75]
 
         # some samples
-        packet = self.filter_vcf(open(VCF_PATH),
-                                 filter_=MafFilter(min_maf=0.6, max_maf=0.8,
-                                                   samples_to_consider=
-                                                   ('pepo', 'mu16')))
-        res = self.eval_prop_in_packet(packet, 'maf')
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=MafFilter(min_maf=0.6, max_maf=0.8,
+                                              samples_to_consider=('pepo',
+                                                                   'mu16')))
+        res = eval_prop_in_packet(packet, 'maf')
         assert res[FILTERED_OUT] == [0.5, 0.5, 0.5, 0.75, None, 0.5, 0.75, 1.0,
                                      1.0, 1.0]
         assert res[PASSED] == []
+
+
+class ObsHetFilterTest(unittest.TestCase):
+    def test_obs_het(self):
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=ObsHetFilter(min_het=0.5))
+        res = eval_prop_in_packet(packet, 'obs_het')
+        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0]
+        assert res[PASSED] == [0.5, 1.0, 0.5]
+
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=ObsHetFilter(max_het=0.5))
+        res = eval_prop_in_packet(packet, 'obs_het')
+        assert res[FILTERED_OUT] == [None, 1.0]
+        assert res[PASSED] == [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0]
+
+        packet = filter_vcf(open(VCF_PATH), filter_=ObsHetFilter(min_het=0.1,
+                                                                 max_het=0.9))
+        res = eval_prop_in_packet(packet, 'obs_het')
+        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, None, 1.0, 0.0, 0.0, 0.0]
+        assert res[PASSED] == [0.5, 0.5]
+
+        # some samples
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=ObsHetFilter(min_het=0.1, max_het=0.9,
+                                                 samples_to_consider=('pepo',
+                                                                      'mu16')))
+        res = eval_prop_in_packet(packet, 'obs_het')
+        assert res[FILTERED_OUT] == [0.0, 0.0, 0.0, 0.5, None, 1.0, 0.5, 0.0,
+                                     0.0, 0.0]
+        assert res[PASSED] == []
+
+    def test_obs_het_bin(self):
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_het')
+
+        assert 'positional' in check_output([binary, '-h'])
+
+        in_fhand = NamedTemporaryFile()
+        in_fhand.write(VCF_HEADER + VCF)
+        in_fhand.flush()
+        plot_fhand = NamedTemporaryFile(suffix='.png')
+        cmd = [binary, '-m', '0.5', '-c', '2', '-t', plot_fhand.name,
+               in_fhand.name]
+        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
+        stdout, stderr = process.communicate()
+        assert "passsed: 3" in stderr
+        assert 'fileDate' in stdout
 
 
 class BinaryFilterTest(unittest.TestCase):
@@ -351,20 +357,6 @@ class BinaryFilterTest(unittest.TestCase):
         process = Popen(cmd, stderr=PIPE, stdout=PIPE)
         stdout, stderr = process.communicate()
         assert "passsed: 5" in stderr
-        assert 'fileDate' in stdout
-
-    def test_obs_het_bin(self):
-        binary = join(VCF_BIN_DIR, 'filter_vcf_by_het')
-
-        assert 'positional' in check_output([binary, '-h'])
-
-        in_fhand = NamedTemporaryFile()
-        in_fhand.write(VCF_HEADER + VCF)
-        in_fhand.flush()
-        cmd = [binary, '-m', '0.5', '-c', '2', in_fhand.name]
-        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
-        stdout, stderr = process.communicate()
-        assert "passsed: 3" in stderr
         assert 'fileDate' in stdout
 
     def test_maf_bin(self):
@@ -561,5 +553,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys; sys.argv = ['', 'ConsistentRecombinationTest']
+    # import sys; sys.argv = ['', 'ObsHetFilterTest']
     unittest.main()

@@ -266,6 +266,7 @@ class ObsHetFilter(_BaseFilter):
         self.min_het = min_het
         self.max_het = max_het
         self.remove_nd = remove_nd
+        self.hets = array('f')
 
     def _do_check(self, snv):
         min_het = self.min_het
@@ -273,11 +274,24 @@ class ObsHetFilter(_BaseFilter):
         het = snv.obs_het
         if het is None and self.remove_nd:
             return False
+        self.hets.append(het)
         if min_het is not None and het < min_het:
             return False
         if max_het is not None and het > max_het:
             return False
         return True
+
+    def plot_hist(self, fhand):
+        fig = Figure()
+        axes = fig.add_subplot(111)
+        axes.hist(self.hets, fill=True, log=True, bins=20, rwidth=1)
+        if self.min_het is not None:
+            axes.axvline(x=self.min_het)
+        if self.max_het is not None:
+            axes.axvline(x=self.max_het)
+        axes.set_xlabel('% Obs. het.')
+        axes.set_ylabel('num. SNPs')
+        _print_figure(axes, fig, fhand, plot_legend=False)
 
 
 class MafFilter(_BaseFilter):
