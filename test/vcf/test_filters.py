@@ -330,22 +330,22 @@ class SnvQualTest(unittest.TestCase):
         filter_.plot_hist(plot_fhand)
 
 
-class BinaryFilterTest(unittest.TestCase):
+def get_snv_pos(vcf_fhand):
+    pos = []
+    for line in vcf_fhand:
+        if line.startswith('#'):
+            continue
+        pos.append(int(line.split()[1]))
+    return pos
 
-    def get_snv_pos(self, vcf_fhand):
-        pos = []
-        for line in vcf_fhand:
-            if line.startswith('#'):
-                continue
-            pos.append(int(line.split()[1]))
-        return pos
 
+class FilterVcfFunctTest(unittest.TestCase):
     def test_filter_fhand(self):
         in_fhand = StringIO(VCF_HEADER + VCF)
         out_fhand = StringIO()
         filter_snvs(in_fhand, out_fhand, filters=[])
-        res = self.get_snv_pos(StringIO(out_fhand.getvalue()))
-        in_pos = self.get_snv_pos(StringIO(in_fhand.getvalue()))
+        res = get_snv_pos(StringIO(out_fhand.getvalue()))
+        in_pos = get_snv_pos(StringIO(in_fhand.getvalue()))
         assert in_pos == res
 
         in_fhand = StringIO(VCF_HEADER + VCF)
@@ -354,13 +354,15 @@ class BinaryFilterTest(unittest.TestCase):
         log_fhand = StringIO()
         filter_snvs(in_fhand, out_fhand, filters=[BiallelicFilter()],
                     filtered_fhand=filtered_fhand, log_fhand=log_fhand)
-        res = self.get_snv_pos(StringIO(out_fhand.getvalue()))
-        filtered = self.get_snv_pos(StringIO(filtered_fhand.getvalue()))
-        in_pos = self.get_snv_pos(StringIO(in_fhand.getvalue()))
+        res = get_snv_pos(StringIO(out_fhand.getvalue()))
+        filtered = get_snv_pos(StringIO(filtered_fhand.getvalue()))
+        in_pos = get_snv_pos(StringIO(in_fhand.getvalue()))
         assert res == [14370, 17330, 1230237]
         assert filtered == [1110696, 1234567, 1234567]
         assert 'SNVs passsed: 3' in log_fhand.getvalue()
 
+
+class BinaryFilterTest(unittest.TestCase):
     def test_biallelic_binary(self):
         binary = join(VCF_BIN_DIR, 'filter_vcf_by_biallelic')
 
@@ -377,8 +379,8 @@ class BinaryFilterTest(unittest.TestCase):
         stderr = process.communicate()[-1]
         assert "passsed: 3" in stderr
 
-        res = self.get_snv_pos(open(out_fhand.name))
-        filtered = self.get_snv_pos(open(filtered_fhand.name))
+        res = get_snv_pos(open(out_fhand.name))
+        filtered = get_snv_pos(open(filtered_fhand.name))
         assert res == [14370, 17330, 1230237]
         assert filtered == [1110696, 1234567, 1234567]
 
@@ -387,7 +389,7 @@ class BinaryFilterTest(unittest.TestCase):
         process = Popen(cmd, stderr=PIPE, stdout=PIPE)
         stdout, stderr = process.communicate()
         assert "passsed: 3" in stderr
-        res = self.get_snv_pos(StringIO(stdout))
+        res = get_snv_pos(StringIO(stdout))
         assert res == [14370, 17330, 1230237]
 
         # with stdin
@@ -557,5 +559,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys; sys.argv = ['', 'MafFilterTest']
+    # import sys; sys.argv = ['', 'MafFilterTest']
     unittest.main()

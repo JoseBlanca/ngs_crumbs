@@ -77,7 +77,7 @@ def _write_log(log_fhand, tot_snps, passed_snps):
 
 def filter_snvs(in_fhand, out_fhand, filters, filtered_fhand=None,
                 log_fhand=None, reader_kwargs=None):
-    '''IT filters an input vcf.
+    '''It filters an input vcf.
 
     The input fhand has to be uncompressed. The original file could be a
     gzipped file, but in that case it has to be opened with gzip.open before
