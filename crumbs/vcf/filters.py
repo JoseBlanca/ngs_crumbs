@@ -276,18 +276,26 @@ class IsSNPFilter(_BaseFilter):
 
 
 class SnvQualFilter(_BaseFilter):
-    def __init__(self, min_qual, reverse=False, samples_to_consider=None):
-        parent_kwargs = {'reverse': reverse,
-                         'samples_to_consider': samples_to_consider}
+    def __init__(self, min_qual, reverse=False):
+        parent_kwargs = {'reverse': reverse}
         super(SnvQualFilter, self).__init__(**parent_kwargs)
         self.min_qual = min_qual
+        self.values = array('f')
 
     def _do_check(self, snv):
         qual = snv.qual
         if qual is None:
             return False
-        else:
-            return qual >= self.min_qual
+        self.values.append(qual)
+        return qual >= self.min_qual
+
+    def plot_hist(self, fhand):
+        values = self.values
+        min_value = self.min_qual
+        xlabel = 'SNV quality'
+        ylabel = 'num. SNPs'
+        self._plot_hist(fhand, values, min_value=min_value, xlabel=xlabel,
+                        ylabel=ylabel)
 
 
 class ObsHetFilter(_BaseFilter):

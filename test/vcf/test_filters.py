@@ -145,26 +145,6 @@ class FiltersTest(unittest.TestCase):
         assert res[FILTERED_OUT] == [False] * 7
         assert not res[PASSED]
 
-    def test_snv_qual(self):
-        packet = filter_vcf(open(VCF_PATH), filter_=SnvQualFilter(20))
-        res = eval_prop_in_packet(packet, 'qual')
-        assert res[FILTERED_OUT] == [None] * 10
-        assert not res[PASSED]
-
-        fpath = join(TEST_DATA_DIR, 'freebayes_al_depth.vcf')
-        packet = filter_vcf(open(fpath), filter_=SnvQualFilter(1))
-        res = eval_prop_in_packet(packet, 'qual')
-        assert len(res[FILTERED_OUT]) == 1
-        assert len(res[PASSED]) == 4
-
-        fpath = join(TEST_DATA_DIR, 'freebayes_al_depth.vcf')
-        packet = filter_vcf(open(fpath), filter_=SnvQualFilter(1,
-                            samples_to_consider=('1_14_1_gbs', '1_17_1_gbs',
-                                                 '1_18_4_gbs')))
-        res = eval_prop_in_packet(packet, 'qual')
-        assert len(res[FILTERED_OUT]) == 1
-        assert len(res[PASSED]) == 4
-
     def test_maf(self):
         packet = filter_vcf(open(VCF_PATH), filter_=MafFilter(min_maf=0.6))
         res = eval_prop_in_packet(packet, 'maf')
@@ -289,6 +269,24 @@ class ObsHetFilterTest(unittest.TestCase):
         stdout, stderr = process.communicate()
         assert "passsed: 3" in stderr
         assert 'fileDate' in stdout
+
+
+class SnvQualTest(unittest.TestCase):
+    def test_snv_qual(self):
+        packet = filter_vcf(open(VCF_PATH), filter_=SnvQualFilter(20))
+        res = eval_prop_in_packet(packet, 'qual')
+        assert res[FILTERED_OUT] == [None] * 10
+        assert not res[PASSED]
+
+        fpath = join(TEST_DATA_DIR, 'freebayes_al_depth.vcf')
+        filter_ = SnvQualFilter(1)
+        packet = filter_vcf(open(fpath), filter_=filter_)
+        res = eval_prop_in_packet(packet, 'qual')
+        assert len(res[FILTERED_OUT]) == 1
+        assert len(res[PASSED]) == 4
+
+        plot_fhand = NamedTemporaryFile(suffix='.png')
+        filter_.plot_hist(plot_fhand)
 
 
 class BinaryFilterTest(unittest.TestCase):
@@ -556,5 +554,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys; sys.argv = ['', 'ObsHetFilterTest']
+    import sys; sys.argv = ['', 'SnvQualTest']
     unittest.main()
