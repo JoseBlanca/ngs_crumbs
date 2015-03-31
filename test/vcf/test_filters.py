@@ -145,6 +145,8 @@ class FiltersTest(unittest.TestCase):
         assert res[FILTERED_OUT] == [False] * 7
         assert not res[PASSED]
 
+
+class MafFilterTest(unittest.TestCase):
     def test_maf(self):
         packet = filter_vcf(open(VCF_PATH), filter_=MafFilter(min_maf=0.6))
         res = eval_prop_in_packet(packet, 'maf')
@@ -171,6 +173,45 @@ class FiltersTest(unittest.TestCase):
         assert res[FILTERED_OUT] == [0.5, 0.5, 0.5, 0.75, None, 0.5, 0.75, 1.0,
                                      1.0, 1.0]
         assert res[PASSED] == []
+
+    def test_maf_bin(self):
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
+
+        assert 'positional' in check_output([binary, '-h'])
+
+        in_fhand = NamedTemporaryFile()
+        in_fhand.write(VCF_HEADER + VCF)
+        in_fhand.flush()
+        log_fhand = NamedTemporaryFile()
+        hist_fhand = NamedTemporaryFile(suffix='.png')
+        cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name,
+               '-t', hist_fhand.name, in_fhand.name]
+        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
+        stdout = process.communicate()[0]
+        assert "passsed: 2" in open(log_fhand.name).read()
+        assert 'fileDate' in stdout
+
+        # You can pipe and not set the template
+        vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
+        cmd1 = ['zcat', vcf_fpath]
+        process1 = Popen(cmd1, stdout=PIPE)
+        log_fhand = NamedTemporaryFile()
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
+        cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name]
+        process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
+        stdout = process2.communicate()[0]
+        assert len(list(VCFReader(StringIO(stdout)).parse_snvs())) == 69
+
+        # You cannot pipe a compressed file
+        vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
+        cmd1 = ['cat', vcf_fpath]
+        process1 = Popen(cmd1, stdout=PIPE)
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
+        cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name]
+        process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
+        stdout, stderr = process2.communicate()
+        assert not stdout
+        assert 'tell member' in stderr
 
 
 class CallRateFilterTest(unittest.TestCase):
@@ -360,44 +401,6 @@ class BinaryFilterTest(unittest.TestCase):
         assert "passsed: 3" in stderr
         in_fhand.close()
 
-    def test_maf_bin(self):
-        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
-
-        assert 'positional' in check_output([binary, '-h'])
-
-        in_fhand = NamedTemporaryFile()
-        in_fhand.write(VCF_HEADER + VCF)
-        in_fhand.flush()
-        log_fhand = NamedTemporaryFile()
-        cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name,
-               in_fhand.name]
-        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
-        stdout = process.communicate()[0]
-        assert "passsed: 2" in open(log_fhand.name).read()
-        assert 'fileDate' in stdout
-
-        # You can pipe and not set the template
-        vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
-        cmd1 = ['zcat', vcf_fpath]
-        process1 = Popen(cmd1, stdout=PIPE)
-        log_fhand = NamedTemporaryFile()
-        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
-        cmd = [binary, '-m', '0.7', '-c', '2', '-l', log_fhand.name]
-        process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
-        stdout = process2.communicate()[0]
-        assert len(list(VCFReader(StringIO(stdout)).parse_snvs())) == 69
-
-        # You cannot pipe a compressed file
-        vcf_fpath = os.path.join(TEST_DATA_DIR, 'scaff000025.vcf.gz')
-        cmd1 = ['cat', vcf_fpath]
-        process1 = Popen(cmd1, stdout=PIPE)
-        binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
-        cmd = [binary,  '-m', '0.7', '-c', '2', '-l', log_fhand.name]
-        process2 = Popen(cmd, stderr=PIPE, stdout=PIPE, stdin=process1.stdout)
-        stdout, stderr = process2.communicate()
-        assert not stdout
-        assert 'tell member' in stderr
-
     def test_by_sample_bin(self):
         binary = join(VCF_BIN_DIR, 'filter_vcf_by_sample')
 
@@ -554,5 +557,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys; sys.argv = ['', 'SnvQualTest']
+    import sys; sys.argv = ['', 'MafFilterTest']
     unittest.main()

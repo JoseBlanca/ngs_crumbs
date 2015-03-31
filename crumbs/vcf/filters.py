@@ -344,6 +344,7 @@ class MafFilter(_BaseFilter):
         self.min_maf = min_maf
         self.max_maf = max_maf
         self.remove_nd = remove_nd
+        self.values = array('f')
 
     def _do_check(self, snv):
         min_maf = self.min_maf
@@ -351,11 +352,22 @@ class MafFilter(_BaseFilter):
         maf = snv.maf
         if maf is None and self.remove_nd:
             return False
+        self.values.append(maf)
         if min_maf is not None and maf < min_maf:
             return False
         if max_maf is not None and maf > max_maf:
             return False
         return True
+
+    def plot_hist(self, fhand):
+        values = self.values
+        min_value = self.min_maf
+        max_value = self.max_maf
+        xlabel = 'MAF'
+        ylabel = 'num. SNPs'
+        self._plot_hist(fhand, values, min_value=min_value,
+                        max_value=max_value, xlabel=xlabel, ylabel=ylabel)
+
 
 FISHER_CACHE = {}
 

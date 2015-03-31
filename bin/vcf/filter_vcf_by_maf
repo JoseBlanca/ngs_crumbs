@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with seq_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+
 from crumbs.vcf.filters import MafFilter, filter_snvs
 from crumbs.vcf.utils.bin_utils import setup_filter_argparse, parse_filter_args
 from crumbs.vcf.snv import DEF_MIN_CALLS_FOR_POP_STATS
@@ -32,6 +34,8 @@ def _setup_argparse(**kwargs):
     msg += str(DEF_MIN_CALLS_FOR_POP_STATS) + ')'
     parser.add_argument('-c', '--min_calls', type=int, help=msg,
                         default=DEF_MIN_CALLS_FOR_POP_STATS)
+    parser.add_argument('-t', '--hist', help='Call rate histogram plot',
+                        type=argparse.FileType('w'))
     return parser
 
 
@@ -49,18 +53,22 @@ def _parse_args(parser):
     min_calls = parsed_args.min_calls
     if min_calls:
         reader_args['min_calls_for_pop_stats'] = min_calls
-    return filter_snvs_kwargs, filter_class_kwargs, reader_args
+    return (filter_snvs_kwargs, filter_class_kwargs, reader_args,
+            parsed_args.hist)
 
 
 def main():
     desc = 'Removes the SNVs according to its observed Major Allele Freq. '
     desc += 'from a VCF file'
     parser = _setup_argparse(description=desc)
-    kwargs, filter_kwargs, reader_args = _parse_args(parser)
+    kwargs, filter_kwargs, reader_args, hist_fhand = _parse_args(parser)
 
     filter_ = MafFilter(**filter_kwargs)
     kwargs['filters'] = [filter_]
     filter_snvs(reader_kwargs=reader_args, **kwargs)
+
+    if hist_fhand is not None:
+        filter_.plot_hist(hist_fhand)
 
 if __name__ == '__main__':
     main()
