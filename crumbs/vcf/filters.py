@@ -30,7 +30,6 @@ from crumbs.iterutils import group_in_packets, RandomAccessIterator
 
 from crumbs.vcf.snv import VCFReader, VCFWriter, DEF_MIN_CALLS_FOR_POP_STATS
 from crumbs.vcf.ld import calc_recomb_rate
-from crumbs.vcf import snv
 from crumbs.utils.optional_modules import (Figure, FigureCanvas, curve_fit, t,
                                            absolute, exp, percentile, r,
                                            IntVector)
