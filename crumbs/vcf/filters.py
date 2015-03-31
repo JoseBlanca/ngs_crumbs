@@ -315,16 +315,13 @@ class ObsHetFilter(_BaseFilter):
         return True
 
     def plot_hist(self, fhand):
-        fig = Figure()
-        axes = fig.add_subplot(111)
-        axes.hist(self.hets, fill=True, log=True, bins=20, rwidth=1)
-        if self.min_het is not None:
-            axes.axvline(x=self.min_het)
-        if self.max_het is not None:
-            axes.axvline(x=self.max_het)
-        axes.set_xlabel('% Obs. het.')
-        axes.set_ylabel('num. SNPs')
-        _print_figure(axes, fig, fhand, plot_legend=False)
+        values = self.hets
+        min_value = self.min_het
+        max_value = self.max_het
+        xlabel = '% Obs. het.'
+        ylabel = 'num. SNPs'
+        self._plot_hist(fhand, values, min_value=min_value,
+                        max_value=max_value, xlabel=xlabel, ylabel=ylabel)
 
 
 class MafFilter(_BaseFilter):

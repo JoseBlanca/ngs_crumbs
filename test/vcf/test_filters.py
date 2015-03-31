@@ -556,5 +556,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys; sys.argv = ['', 'CallRateFilterTest']
+    import sys; sys.argv = ['', 'ObsHetFilterTest']
     unittest.main()
