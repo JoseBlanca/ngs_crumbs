@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with seq_crumbs. If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+
 from crumbs.vcf.filters import CallRateFilter, filter_snvs
 from crumbs.vcf.utils.bin_utils import setup_filter_argparse, parse_filter_args
 
@@ -27,7 +29,8 @@ def _setup_argparse(**kwargs):
                         help='The SNV should have at least these genotypes')
     msg = 'The SNV should have at least this call/total genotypes'
     parser.add_argument('-r', '--min_call_rate', type=float, help=msg)
-
+    parser.add_argument('-t', '--hist', help='Call rate histogram plot',
+                        type=argparse.FileType('w'))
     return parser
 
 
@@ -48,18 +51,22 @@ def _parse_args(parser):
     if min_call_rate is not None:
         filter_class_kwargs['min_call_rate'] = min_call_rate
 
-    return filter_snvs_kwargs, filter_class_kwargs
+    hist_fhand = parsed_args.hist
+
+    return filter_snvs_kwargs, filter_class_kwargs, hist_fhand
 
 
 def main():
     description = 'Removes the SNVs with too much missing data from a VCF file'
     parser = _setup_argparse(description=description)
-    kwargs, filter_kwargs = _parse_args(parser)
+    kwargs, filter_kwargs, hist_fhand = _parse_args(parser)
 
     filter_ = CallRateFilter(**filter_kwargs)
     kwargs['filters'] = [filter_]
     filter_snvs(**kwargs)
 
+    if hist_fhand is not None:
+        filter_.plot_hist(hist_fhand)
 
 if __name__ == '__main__':
     main()

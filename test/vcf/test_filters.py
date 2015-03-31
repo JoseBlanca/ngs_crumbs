@@ -95,40 +95,6 @@ class FiltersTest(unittest.TestCase):
                {FILTERED_OUT: [], PASSED: (8, 9)}]
         assert res == packets
 
-    def test_missing_genotypes(self):
-        packet = filter_vcf(open(VCF_PATH),
-                            filter_=CallRateFilter(min_calls=2))
-        res = eval_prop_in_packet(packet, 'num_called')
-        expected = {FILTERED_OUT: [0, 1, 1, 1, 1], PASSED: [2, 2, 2, 2, 2]}
-        assert res == expected
-
-        packet = filter_vcf(open(VCF_PATH),
-                            filter_=CallRateFilter(min_calls=1))
-        res = eval_prop_in_packet(packet, 'num_called')
-        expected = {FILTERED_OUT: [0], PASSED: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
-        assert res == expected
-
-        packet = filter_vcf(open(VCF_PATH),
-                            filter_=CallRateFilter(min_calls=1,
-                                                   reverse=True))
-        res = eval_prop_in_packet(packet, 'num_called')
-        expected = {PASSED: [0], FILTERED_OUT: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
-        assert res == expected
-
-        packet = filter_vcf(open(VCF_PATH),
-                            filter_=CallRateFilter(min_calls=3))
-        res = eval_prop_in_packet(packet, 'num_called')
-        expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
-        assert res == expected
-
-        # some samples
-        packet = filter_vcf(open(VCF_PATH),
-                            filter_=CallRateFilter(min_calls=2,
-                            samples_to_consider=('pepo', 'mu16')))
-        res = eval_prop_in_packet(packet, 'num_called')
-        expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
-        assert res == expected
-
     def test_biallelic(self):
         packet = filter_vcf(open(VCF_PATH), filter_=BiallelicFilter())
         res = eval_prop_in_packet(packet, 'alleles')
@@ -225,6 +191,57 @@ class FiltersTest(unittest.TestCase):
         assert res[FILTERED_OUT] == [0.5, 0.5, 0.5, 0.75, None, 0.5, 0.75, 1.0,
                                      1.0, 1.0]
         assert res[PASSED] == []
+
+
+class CallRateFilterTest(unittest.TestCase):
+    def test_missing_genotypes(self):
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=2))
+        res = eval_prop_in_packet(packet, 'num_called')
+        expected = {FILTERED_OUT: [0, 1, 1, 1, 1], PASSED: [2, 2, 2, 2, 2]}
+        assert res == expected
+
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=1))
+        res = eval_prop_in_packet(packet, 'num_called')
+        expected = {FILTERED_OUT: [0], PASSED: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
+        assert res == expected
+
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=1,
+                                                   reverse=True))
+        res = eval_prop_in_packet(packet, 'num_called')
+        expected = {PASSED: [0], FILTERED_OUT: [2, 2, 2, 2, 1, 2, 1, 1, 1]}
+        assert res == expected
+
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=3))
+        res = eval_prop_in_packet(packet, 'num_called')
+        expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
+        assert res == expected
+
+        # some samples
+        packet = filter_vcf(open(VCF_PATH),
+                            filter_=CallRateFilter(min_calls=2,
+                            samples_to_consider=('pepo', 'mu16')))
+        res = eval_prop_in_packet(packet, 'num_called')
+        expected = {PASSED: [], FILTERED_OUT: [2, 2, 2, 2, 0, 1, 2, 1, 1, 1]}
+        assert res == expected
+
+    def test_call_rate_bin(self):
+        binary = join(VCF_BIN_DIR, 'filter_vcf_by_missing')
+
+        assert 'positional' in check_output([binary, '-h'])
+
+        in_fhand = NamedTemporaryFile()
+        in_fhand.write(VCF_HEADER + VCF)
+        in_fhand.flush()
+        plot_fhand = NamedTemporaryFile(suffix='.png')
+        cmd = [binary, '-m', '3', '-t', plot_fhand.name, in_fhand.name]
+        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
+        stdout, stderr = process.communicate()
+        assert "passsed: 5" in stderr
+        assert 'fileDate' in stdout
 
 
 class ObsHetFilterTest(unittest.TestCase):
@@ -344,20 +361,6 @@ class BinaryFilterTest(unittest.TestCase):
         stdout, stderr = process.communicate()
         assert "passsed: 3" in stderr
         in_fhand.close()
-
-    def test_call_rate_bin(self):
-        binary = join(VCF_BIN_DIR, 'filter_vcf_by_missing')
-
-        assert 'positional' in check_output([binary, '-h'])
-
-        in_fhand = NamedTemporaryFile()
-        in_fhand.write(VCF_HEADER + VCF)
-        in_fhand.flush()
-        cmd = [binary, '-m', '3', in_fhand.name]
-        process = Popen(cmd, stderr=PIPE, stdout=PIPE)
-        stdout, stderr = process.communicate()
-        assert "passsed: 5" in stderr
-        assert 'fileDate' in stdout
 
     def test_maf_bin(self):
         binary = join(VCF_BIN_DIR, 'filter_vcf_by_maf')
@@ -553,5 +556,5 @@ class ConsistentRecombinationTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # import sys; sys.argv = ['', 'ObsHetFilterTest']
+    import sys; sys.argv = ['', 'CallRateFilterTest']
     unittest.main()

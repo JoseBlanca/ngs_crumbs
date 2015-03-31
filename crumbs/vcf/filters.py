@@ -176,6 +176,29 @@ class _BaseFilter(object):
 
         return {PASSED: items_passed, FILTERED_OUT: filtered_out}
 
+    def _plot_hist(self, fhand, values, xlabel, ylabel, min_value=None,
+                   max_value=None):
+        fig = Figure()
+        axes = fig.add_subplot(111)
+        axes.hist(values, fill=True, log=True, bins=20, rwidth=1)
+        if min_value is not None:
+            axes.axvline(x=min_value)
+        if max_value is not None:
+            axes.axvline(x=max_value)
+        axes.set_xlabel(xlabel)
+        axes.set_ylabel(ylabel)
+        _print_figure(axes, fig, fhand, plot_legend=False)
+
+
+def _print_figure(axes, figure, plot_fhand, plot_legend=True, fmt='png'):
+    if figure is None:
+        return
+    if plot_legend:
+        axes.legend()
+    canvas = FigureCanvas(figure)
+    canvas.print_figure(plot_fhand, format=fmt)
+    plot_fhand.flush()
+
 
 class MonomorphicFilter(_BaseFilter):
     "Filters monomorphic snvs"
@@ -207,18 +230,29 @@ class CallRateFilter(_BaseFilter):
             raise ValueError(msg)
         self.min_calls = min_calls
         self.min_call_rate = min_call_rate
+        self.call_rates = array('f')
 
     def _do_check(self, snv):
+        value = snv.num_called if self.min_calls else snv.call_rate
+        self.call_rates.append(value)
         if self.min_calls:
-            if snv.num_called >= self.min_calls:
+            if value >= self.min_calls:
                 return True
             else:
                 return False
         else:
-            if snv.call_rate >= self.min_call_rate:
+            if value >= self.min_call_rate:
                 return True
             else:
                 return False
+
+    def plot_hist(self, fhand):
+        values = self.call_rates
+        min_value = self.min_calls if self.min_calls else self.min_call_rate
+        xlabel = 'Num. calls' if self.min_calls else 'Call rate'
+        ylabel = 'num. SNPs'
+        self._plot_hist(fhand, values, min_value=min_value, xlabel=xlabel,
+                        ylabel=ylabel)
 
 
 class BiallelicFilter(_BaseFilter):
@@ -678,16 +712,6 @@ def _fit_kosambi(dists, recombs, init_params):
     except TypeError:
         # It happens when recombs is all nan
         return None, None
-
-
-def _print_figure(axes, figure, plot_fhand, plot_legend=True):
-    if figure is None:
-        return
-    if plot_legend:
-        axes.legend()
-    canvas = FigureCanvas(figure)
-    canvas.print_figure(plot_fhand)
-    plot_fhand.flush()
 
 
 def _calc_ajusted_recomb(dists, recombs, max_recomb, max_zero_dist_recomb,
