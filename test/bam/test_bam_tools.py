@@ -25,7 +25,7 @@ from crumbs.utils.test_utils import TEST_DATA_DIR
 from crumbs.utils.bin_utils import BAM_BIN_DIR
 from crumbs.bam.bam_tools import (filter_bam, calmd_bam, realign_bam,
                                   index_bam, merge_sams,
-                                  _downgrade_edge_qualities, BAD_QUAL)
+                                  _downgrade_edge_qualities)
 
 # pylint: disable=C0111
 
@@ -160,17 +160,31 @@ class CalmdTest(unittest.TestCase):
 class DowngradeQuality(unittest.TestCase):
 
     def test_downngrade_read_edges(self):
+        # With softclip
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample.bam')
         sam = AlignmentFile(bam_fpath)
 
         aligned_read = sam.next()
-        _downgrade_edge_qualities(aligned_read, size=4,
-                                  bad_qual_value=BAD_QUAL)
-        res = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 39,
+        _downgrade_edge_qualities(aligned_read, size=4, qual_to_substract=30)
+        res = [9, 9, 9, 9, 9, 9, 3, 9, 8, 8, 9, 9, 9, 9, 9, 39,
                39, 39, 38, 38, 36, 33, 36, 38, 36, 38, 38, 38, 38, 39, 39, 38,
-               38, 38, 10, 10, 10, 10]
+               38, 38, 9, 9, 9, 9]
         assert list(aligned_read.query_qualities) == res
 
+        # without softclip
+        sam = AlignmentFile(os.path.join(TEST_DATA_DIR, 'seqs.bam'))
+
+        aligned_read = sam.next()
+        _downgrade_edge_qualities(aligned_read, size=4, qual_to_substract=30)
+        expected = [11, 13, 11, 11, 37, 43, 43, 46, 46, 57, 57, 48, 57, 57, 42,
+                    41, 32, 35, 38, 38, 38, 38, 41, 41, 39, 37, 37, 44, 42, 48,
+                    47, 57, 47, 47, 48, 47, 57, 57, 54, 48, 57, 48, 54, 50, 50,
+                    50, 50, 50, 57, 59, 54, 54, 54, 57, 57, 59, 57, 52, 52, 52,
+                    52, 57, 57, 57, 57, 52, 52, 52, 52, 29, 27, 27, 22]
+
+        assert list(aligned_read.query_qualities) == expected
+
+        # reverse
         # rev seqs (sam specification puts all the alignment query
         # forward(cigar, seq, qual, ...). Reverse is inly noted in the flag
         bam_fpath = os.path.join(TEST_DATA_DIR, 'sample_rev.bam')
@@ -180,8 +194,8 @@ class DowngradeQuality(unittest.TestCase):
         aligned_read = sam.next()
         aligned_read = sam.next()
         _downgrade_edge_qualities(aligned_read, size=4,
-                                  bad_qual_value=BAD_QUAL)
-        res = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+                                  qual_to_substract=30)
+        res = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0]
         assert list(aligned_read.query_qualities[:14]) == res
 
     def test_downgrade_read_edges_binary(self):
@@ -191,9 +205,11 @@ class DowngradeQuality(unittest.TestCase):
             cmd = [binary, '-o', out_fhand.name, bam_fpath]
             check_call(cmd)
             sam = AlignmentFile(out_fhand.name)
-            res = [10, 10]
-            assert list(sam.next().query_qualities[:2]) == res
-
+            res = [0, 0]
+            read = sam.next()
+            assert list(read.query_qualities[:2]) == res
+            assert read.get_tag('dl') == '8)5B'
+            assert read.get_tag('dr') == '8?>>'
 
 if __name__ == "__main__":
     # import sys; sys.argv = ['', 'DowngradeQuality']

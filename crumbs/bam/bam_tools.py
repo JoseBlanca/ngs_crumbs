@@ -203,27 +203,44 @@ def merge_sams(in_fpaths, out_fpath):
         sys.stderr.write(open(stderr.name).read())
         sys.stdout.write(open(stdout.name).read())
 
-BAD_QUAL = 10
+QUAL_TO_SUBSTRACT = 30
 
 
 def downgrade_read_edges(in_fpath, out_fpath, size,
-                         bad_qual_value=BAD_QUAL):
+                         qual_to_substract=QUAL_TO_SUBSTRACT):
     in_sam = AlignmentFile(in_fpath)
     out_sam = AlignmentFile(out_fpath, 'wb', template=in_sam)
     for aligned_read in in_sam:
         _downgrade_edge_qualities(aligned_read, size,
-                                  bad_qual_value=bad_qual_value)
+                                  qual_to_substract=qual_to_substract)
         out_sam.write(aligned_read)
 
 
-def _downgrade_edge_qualities(aligned_read, size, bad_qual_value):
-    rigth_limit = aligned_read.qstart + size
-    left_limit = aligned_read.qend - size
-    qlength = aligned_read.query_length
+def _downgrade_edge_qualities(aligned_read, size, qual_to_substract):
+    left_limit = aligned_read.qstart + size
+    right_limit = aligned_read.qend - size
     quals = list(aligned_read.query_qualities)
 
-    new_quals = [bad_qual_value] * rigth_limit
-    new_quals += quals[rigth_limit:left_limit]
+    left_quals = quals[:left_limit]
+    right_quals = quals[right_limit:]
 
-    new_quals += [bad_qual_value] * (qlength - left_limit)
+    def minus(qual):
+        qual -= qual_to_substract
+        if qual < 0:
+            qual = 0
+        return qual
+
+    downgraded_left_quals = list(map(minus, left_quals))
+    downgraded_right_quals = list(map(minus, right_quals))
+
+    new_quals = downgraded_left_quals
+    new_quals.extend(quals[left_limit:right_limit])
+    new_quals.extend(downgraded_right_quals)
+
     aligned_read.query_qualities = array('B', new_quals)
+
+    def to_sanger_qual(quals):
+        return ''.join(chr(33 + qual) for qual in quals)
+
+    aligned_read.set_tag('dl', to_sanger_qual(left_quals), value_type='Z')
+    aligned_read.set_tag('dr', to_sanger_qual(right_quals), value_type='Z')

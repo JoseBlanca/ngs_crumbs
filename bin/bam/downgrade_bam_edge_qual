@@ -19,7 +19,7 @@ import argparse
 import sys
 
 from crumbs.utils.bin_utils import main, build_version_msg
-from crumbs.bam.bam_tools import BAD_QUAL, downgrade_read_edges
+from crumbs.bam.bam_tools import QUAL_TO_SUBSTRACT, downgrade_read_edges
 
 
 def _setup_argparse():
@@ -32,11 +32,11 @@ def _setup_argparse():
                         help='Output file.')
     size_help = 'Size of the segmnet on each edge to downgrade'
     size_help += ' (default: %(default)s))'
-    parser.add_argument('-s', '--edge_size', default=2, help=size_help,
+    parser.add_argument('-s', '--edge_size', default=4, help=size_help,
                         type=int)
-    down_help = 'Bad Quality value to use (default: %(default)s))'
-    parser.add_argument('-q', '--bad_qual', default=BAD_QUAL, help=down_help,
-                        type=int)
+    down_help = 'Quality to substract (default: %(default)s))'
+    parser.add_argument('-q', '--bad_qual', default=QUAL_TO_SUBSTRACT,
+                        help=down_help, type=int)
     parser.add_argument('--version', action='version',
                         version=build_version_msg())
     return parser
@@ -63,7 +63,7 @@ def run():
     out_fhand = args['out_fhand']
 
     downgrade_read_edges(in_fhand.name, out_fhand.name, size=args['edge_size'],
-                         bad_qual_value=args['bad_qual'])
+                         qual_to_substract=args['bad_qual'])
 
 if __name__ == '__main__':
     # sys.argv.append('-h')
