@@ -120,7 +120,7 @@ def map_with_bwamem(index_fpath, unpaired_fpath=None, paired_fpaths=None,
         stderr = NamedTemporaryFile(suffix='.stderr')
     else:
         stderr = open(log_fpath, 'w')
-    # raw_input(' '.join(cmd))
+    #raw_input(' '.join(cmd))
     bwa = popen(cmd, stderr=stderr, stdout=PIPE)
     return bwa
 
@@ -265,11 +265,11 @@ def map_process_to_bam(map_process, bam_fpath, log_fpath=None,
 
 
 def map_process_to_sortedbam(map_process, out_fpath, key='coordinate',
-                             log_fpath=None, tempdir=None):
-    if log_fpath is None:
+                             stderr_fhand=None, tempdir=None):
+    if stderr_fhand is None:
         stderr = NamedTemporaryFile(suffix='.stderr')
     else:
-        stderr = open(log_fpath, 'w')
+        stderr = stderr_fhand
 
     if tempdir is None:
         tempdir = tempfile.gettempdir()
@@ -281,6 +281,11 @@ def map_process_to_sortedbam(map_process, out_fpath, key='coordinate',
     map_process.stdout.close()
     sort.communicate()
 
+    if map_process.returncode:
+        raise RuntimeError('Error in mapping process')
+
+    if sort.returncode:
+        raise RuntimeError('Error in Sort process')
 
 # this should probably be placed somewhere else
 def _reverse(sequence):
