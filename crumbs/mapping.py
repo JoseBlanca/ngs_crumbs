@@ -120,7 +120,7 @@ def map_with_bwamem(index_fpath, unpaired_fpath=None, paired_fpaths=None,
         stderr = NamedTemporaryFile(suffix='.stderr')
     else:
         stderr = open(log_fpath, 'w')
-    #raw_input(' '.join(cmd))
+    # raw_input(' '.join(cmd))
     bwa = popen(cmd, stderr=stderr, stdout=PIPE)
     return bwa
 
@@ -263,6 +263,12 @@ def map_process_to_bam(map_process, bam_fpath, log_fpath=None,
     map_process.stdout.close()  # Allow p1 to receive a SIGPIPE if samtools exits.
     samtools.communicate()
 
+    if map_process.returncode:
+        raise RuntimeError('Error in mapping process')
+
+    if samtools.returncode:
+        raise RuntimeError('Error in Sort process')
+
 
 def map_process_to_sortedbam(map_process, out_fpath, key='coordinate',
                              stderr_fhand=None, tempdir=None):
@@ -334,7 +340,7 @@ def alignedread_to_seqitem(aligned_read, start_pos=0, end_pos=None):
 
 def sort_by_position_in_ref(in_fhand, index_fpath, directory=None,
                             tempdir=None):
-    #changed to bwa mem from bowtie, test doesn't work well, check it out
+    # changed to bwa mem from bowtie, test doesn't work well, check it out
     in_fpath = in_fhand.name
     file_format = get_format(open(in_fpath))
     extra_params = ['--very-fast']
