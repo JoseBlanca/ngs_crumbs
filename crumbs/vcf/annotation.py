@@ -34,9 +34,10 @@ from crumbs.statistics import calculate_dust_score, IntCounter
 from crumbs.utils.tags import SEQRECORD
 from crumbs.seq.seq import SeqWrapper
 from crumbs.bam.statistics import calculate_window, BamCoverages2
-from crumbs.plot import draw_histograms, HistogramPlotter, LINE
+from crumbs.plot import HistogramPlotter, LINE
 
 DATA_DIR = abspath(join(__file__, '..', 'data'))
+
 # Missing docstring
 # pylint: disable=C0111
 
