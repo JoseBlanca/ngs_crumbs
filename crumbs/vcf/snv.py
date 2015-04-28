@@ -623,10 +623,10 @@ class SNV(object):
 
         sample_indexes = {call.sample: idx for idx, call in enumerate(calls)}
 
-        int_alleles = set()
-        for call in calls:
-            if call.called:
-                int_alleles.update([int(allele) for allele in call.gt_alleles])
+        alleles = set()
+        alleles.update([allele for call in calls if call.called for allele in call.gt_alleles])
+        alleles.discard('.')
+        int_alleles = list(map(int, alleles))
 
         record = self.record
         alt_alleles = [a for i, a in enumerate(record.ALT) if i + 1 in int_alleles]
